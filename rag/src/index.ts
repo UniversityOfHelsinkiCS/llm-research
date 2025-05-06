@@ -75,7 +75,26 @@ const loadFile = async (filePath: string) => {
 
 const query = async (query: string) => {
   const embedding = await getEmbedding(query);
-  const results = await search('myIndex', embedding, 5);
+  const results = await search('myIndex', embedding, 5) as {
+    documents: {
+      id: string;
+      value: {
+        title: string;
+        content: string;
+        score: number;
+      }
+    }[];
+  };
+
+  if (Array.isArray(results?.documents)) {
+    results.documents.forEach((doc) => {
+      console.log(`Title: ${doc.value.title}`);
+      console.log(`Content: ${doc.value.content}`);
+      console.log(`Score: ${doc.value.score}`);
+      console.log('---');
+    })
+  }
+
   console.log('Search results:', results);
 }
 

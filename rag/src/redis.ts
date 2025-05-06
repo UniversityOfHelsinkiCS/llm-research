@@ -47,10 +47,12 @@ export const createIndex = async (indexName: string) => {
 
 export const addDocument = async (id: string, title: string, content: string, embedding: number[]) => {
 
-  const embeddingBuffer = Buffer.from(new Float32Array(embedding))
+  console.log(embedding.length)
+  const embeddingBuffer = Buffer.copyBytesFrom(new Float32Array(embedding))
 
-  if (embeddingBuffer.length !== 1024) {
-    throw new Error(`Embedding length is not 1024 bytes, got ${embeddingBuffer.length} bytes`)
+  // Check if the embedding length is correct
+  if (embeddingBuffer.length !== 4096) {
+    throw new Error(`Embedding length is not 4096 bytes, got ${embeddingBuffer.length} bytes`)
   }
 
   await redisClient.hSet(`doc:${id}`, {
@@ -63,10 +65,10 @@ export const addDocument = async (id: string, title: string, content: string, em
 }
 
 export const search = async (indexName: string, embedding: number[], k: number) => {
-  const embeddingBuffer = Buffer.from(new Float32Array(embedding))
+  const embeddingBuffer = Buffer.copyBytesFrom(new Float32Array(embedding))
 
-  if (embeddingBuffer.length !== 1024) {
-    throw new Error(`Embedding length is not 1024 bytes, got ${embeddingBuffer.length} bytes`)
+  if (embeddingBuffer.length !== 4096) {
+    throw new Error(`Embedding length is not 4096 bytes, got ${embeddingBuffer.length} bytes`)
   }
 
   const queryString = `(*)=>[KNN ${k} @embedding $vec_param AS score]`
