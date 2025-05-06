@@ -4,20 +4,29 @@ Dumb self made mvp rag
 
 Run services:
 
-```
+```bash
 docker compose up -d
 ```
 
 Use cli:
 
-```
-npm start -- load data/ohtu
-```
-
-```
-npm start -- query what is scrumbut?
+```bash
+# Load all files recursively from data/ohtu into an index named "myIndex"
+npm start -- load data/ohtu myIndex
 ```
 
+```bash
+# Query rag from "myIndex"
+npm start -- query myIndex what is scrumbut?
 ```
-npm start -- prompt what is scrumbut?
+
+```bash
+# Prompt LLM using rag index "myIndex" 
+npm start -- prompt myIndex what is scrumbut?
+```
+
+Debug rag contents
+
+```bash
+docker exec -it rag-redis-1 redis-cli
 ```

@@ -73,9 +73,9 @@ const loadFile = async (filePath: string) => {
   }
 }
 
-const query = async (query: string) => {
+const query = async (index: string, query: string) => {
   const embedding = await getEmbedding(query);
-  const results = await search('myIndex', embedding, 5) as {
+  const results = await search(index, embedding, 5) as {
     documents: {
       id: string;
       value: {
@@ -94,25 +94,24 @@ const query = async (query: string) => {
       console.log('---');
     })
   }
-
-  console.log('Search results:', results);
 }
 
 const program = new Command()
 program
   .command('load')
-  .description('Load documents into the index')
+  .description('Load documents into a new index')
   .argument('<loadpath>', 'Path to the documents to load')
-  .action(async (loadpath: string) => {
+  .argument('<index>', 'Index name')
+  .action(async (loadpath: string, index: string) => {
+    await createIndex(index);
     await loadDocuments(loadpath);
     console.log('Documents loaded successfully');
   });
 
 program
   .command('query')
+  .argument('<index>', 'Index name')
   .argument('<query>', 'Query to search for')
   .action(query);
-
-await createIndex('myIndex');
 
 program.parse();
