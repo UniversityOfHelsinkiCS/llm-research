@@ -2,7 +2,7 @@ import { Transform } from "node:stream";
 import type { Chunk } from "./chunkingAlgorithms.ts";
 import { mkdirSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
-import { getEmbedding } from "../ollama.ts";
+import { getEmbedding } from "../llm/embed.ts";
 
 export type EmbeddedChunk = Chunk & {
    embedding: number[]

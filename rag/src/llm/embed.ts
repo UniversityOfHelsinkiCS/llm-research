@@ -1,21 +1,19 @@
-import { randomUUID } from 'node:crypto'
-import { Ollama } from 'ollama'
+import { randomUUID } from "node:crypto"
+import { ollama } from "./ollama.ts"
 
 const MODEL_NAME = 'nomic-embed-text'
-
-const ollama = new Ollama({ host: 'http://localhost:11434' })
 
 const pullingModel = ollama
   .pull({
     model: MODEL_NAME,
   })
   .then(() => {
-    console.log(`Model ${MODEL_NAME} pulled successfully`)
+    console.log(`Embedding model ${MODEL_NAME} pulled successfully`)
   })
   .catch((error) => {
-    console.error('Error pulling model:', error)
+    console.error('Error pulling embedding model:', error)
   })
-console.log('Ollama client initialized, pulling model...')
+console.log(`Pulling embedding model ${MODEL_NAME}...`)
 
 export const getEmbedding = async (prompt: string) => {
   // Wait for the model to be pulled before proceeding

@@ -1,7 +1,9 @@
 import { Command } from 'commander';
 import { createIndex, search } from './redis.ts';
-import { getEmbedding } from "./ollama.ts";
+import { getEmbedding } from "./llm/embed.ts";
 import { ingestionPipeline } from './ingestion/pipeline.ts';
+import { getCompletion } from './llm/completion.ts';
+import { ragUse } from './llm/ragUse.ts';
 
 const query = async (index: string, query: string) => {
   const embedding = await getEmbedding(query);
@@ -43,5 +45,28 @@ program
   .argument('<index>', 'Index name')
   .argument('<query>', 'Query to search for')
   .action(query);
+
+program
+  .command('prompt')
+  .description('Prompt the model')
+  .argument('<prompt>', 'Prompt to send to the model')
+  .action(async (prompt: string) => {
+    const responseMessage = await getCompletion([
+      {
+        role: 'user',
+        content: prompt,
+      },
+    ]);
+
+    console.log(`Response:\n${JSON.stringify(responseMessage, null, 2)}`);
+  })
+
+program
+  .command('rag')
+  .description('Prompt the model using rag')
+  .argument('<index>', 'Index name')
+  .argument('<query>', 'Query to search for')
+  .option('-k, --k <number>', 'Number of results to return', '3')
+  .action(ragUse)
 
 program.parse();
