@@ -8,7 +8,7 @@ export class RedisStorer extends Writable {
   }
 
   _write(chunk: EmbeddedChunk, _encoding: BufferEncoding, callback: (error?: Error | null) => void): void {
-    addDocument(chunk.id, chunk.title, chunk.content.join('\n'), chunk.embedding).then(() => {
+    addDocument(chunk.id, chunk.metadata, chunk.content.join('\n'), chunk.embedding).then(() => {
       callback();
     })
   }

@@ -2,12 +2,17 @@ import type { FileData } from "./loader.ts"
 
 export type Chunk = {
   id: string
-  title: string
   content: string[]
+  metadata?: {
+    [key: string]: any
+  }
 }
 
 export const createTitleChunks = (file: FileData): Chunk[] => {
   const lines = file.content.split('\n')
+
+  const titleHierarchy = [file.fileName]
+  let currentLevel = 0
 
   const chunkContent: string[] = []
   let title = file.fileName
@@ -18,13 +23,32 @@ export const createTitleChunks = (file: FileData): Chunk[] => {
     if (line.startsWith('#')) {
 
       chunks.push({
-        id: `${file}-${chunks.length}`,
-        title,
+        id: `${file.fileName}-${chunks.length}`,
         content: [...chunkContent],
+        metadata: {
+          title,
+          titleHierarchy: [...titleHierarchy],
+        }
       })
     
-      title = line.replace('#', '').trim()
+      title = line.replaceAll('#', '').trim()
       chunkContent.length = 0
+
+      // Determine the level of the title
+      const level = line.split('#').length - 1
+      if (level > currentLevel) {
+        // New section
+        titleHierarchy.push(title)
+        currentLevel = level
+      } else {
+        // Difference in level
+        const diff = currentLevel - level
+        for (let i = 0; i <= diff; i++) {
+          titleHierarchy.pop()
+        }
+        titleHierarchy.push(title)
+        currentLevel = level
+      }
     }
     chunkContent.push(line)
   }
@@ -32,9 +56,12 @@ export const createTitleChunks = (file: FileData): Chunk[] => {
   // Add the last section
   if (chunkContent.length > 0) {
     chunks.push({
-      id: `${file}-${chunks.length}`,
-      title: 'Last Section',
+      id: `${file.fileName}-${chunks.length}`,
       content: [...chunkContent],
+      metadata: {
+        title,
+        titleHierarchy: [...titleHierarchy],
+      }
     })
   }
 
@@ -57,8 +84,10 @@ export const createStaticChunks = (file: FileData): Chunk[] => {
 
     chunks.push({
       id: `${file.fileName}-${i}`,
-      title: `Chunk ${i}`,
       content: [...chunkContent],
+      metadata: {
+        title: `Chunk ${i}`,
+      }
     })
   }
 

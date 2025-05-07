@@ -15,7 +15,7 @@ export const createIndex = async (indexName: string) => {
     await redisClient.ft.create(
       indexName,
       {
-        title: {
+        metadata: {
           type: 'TEXT',
         },
         content: {
@@ -45,7 +45,7 @@ export const createIndex = async (indexName: string) => {
   }
 }
 
-export const addDocument = async (id: string, title: string, content: string, embedding: number[]) => {
+export const addDocument = async (id: string, metadata: { [key: string]: any } | undefined, content: string, embedding: number[]) => {
   const embeddingBuffer = Buffer.copyBytesFrom(new Float32Array(embedding))
 
   // Check if the embedding length is correct
@@ -54,7 +54,7 @@ export const addDocument = async (id: string, title: string, content: string, em
   }
 
   await redisClient.hSet(`doc:${id}`, {
-    title,
+    metadata: JSON.stringify(metadata || {}),
     content,
     embedding: embeddingBuffer,
   })
