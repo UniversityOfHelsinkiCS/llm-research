@@ -46,8 +46,6 @@ export const createIndex = async (indexName: string) => {
 }
 
 export const addDocument = async (id: string, title: string, content: string, embedding: number[]) => {
-
-  console.log(embedding.length)
   const embeddingBuffer = Buffer.copyBytesFrom(new Float32Array(embedding))
 
   // Check if the embedding length is correct
