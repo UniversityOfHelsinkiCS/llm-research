@@ -10,6 +10,8 @@ await redisClient.connect().then(() => {
   console.error('Redis client connection error', err)
 })
 
+const DIM = 768
+
 export const createIndex = async (indexName: string) => {
   try {
     await redisClient.ft.create(
@@ -25,7 +27,7 @@ export const createIndex = async (indexName: string) => {
           type: 'VECTOR',
           TYPE: 'FLOAT32',
           ALGORITHM: 'HNSW',
-          DIM: 1024,
+          DIM: DIM,
           DISTANCE_METRIC: 'L2',
         },
       },
@@ -49,8 +51,8 @@ export const addDocument = async (id: string, metadata: { [key: string]: any } |
   const embeddingBuffer = Buffer.copyBytesFrom(new Float32Array(embedding))
 
   // Check if the embedding length is correct
-  if (embeddingBuffer.length !== 4096) {
-    throw new Error(`Embedding length is not 4096 bytes, got ${embeddingBuffer.length} bytes`)
+  if (embeddingBuffer.length !== 4 * DIM) {
+    throw new Error(`Embedding length is incorrect, got ${embeddingBuffer.length} bytes`)
   }
 
   await redisClient.hSet(`doc:${id}`, {
@@ -65,8 +67,8 @@ export const addDocument = async (id: string, metadata: { [key: string]: any } |
 export const search = async (indexName: string, embedding: number[], k: number) => {
   const embeddingBuffer = Buffer.copyBytesFrom(new Float32Array(embedding))
 
-  if (embeddingBuffer.length !== 4096) {
-    throw new Error(`Embedding length is not 4096 bytes, got ${embeddingBuffer.length} bytes`)
+  if (embeddingBuffer.length !== 4 * DIM) {
+    throw new Error(`Embedding length is incorrect, got ${embeddingBuffer.length} bytes`)
   }
 
   const queryString = `(*)=>[KNN ${k} @embedding $vec_param AS score]`

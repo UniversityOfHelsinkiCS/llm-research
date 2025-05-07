@@ -15,6 +15,8 @@ Use cli:
 npm start -- load data/ohtu myIndex
 ```
 
+Intermediary chunks will be stored in /pipeline for debugging
+
 ```bash
 # Query rag from "myIndex"
 npm start -- query myIndex what is scrumbut?
@@ -30,3 +32,5 @@ Debug rag contents
 ```bash
 docker exec -it rag-redis-1 redis-cli
 ```
+
+Or navigate to [localhost:8001](http://localhost:8001)
