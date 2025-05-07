@@ -8,7 +8,13 @@ Run services:
 docker compose up -d
 ```
 
-Use cli:
+Configure: set a suitable completion model in src/config.ts
+
+Use cli (requires node v23):
+
+```bash
+npm i
+```
 
 ```bash
 # Load all files recursively from data/ohtu into an index named "myIndex"

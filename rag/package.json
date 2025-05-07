@@ -12,6 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "commander": "^13.1.0",
+    "dotenv": "^16.5.0",
     "ollama": "^0.5.15",
     "redis": "^5.0.1"
   },

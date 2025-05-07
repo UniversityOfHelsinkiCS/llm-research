@@ -1,3 +1,5 @@
+import 'dotenv/config';
+
 import { Command } from 'commander';
 import { createIndex, search } from './redis.ts';
 import { getEmbedding } from "./llm/embed.ts";

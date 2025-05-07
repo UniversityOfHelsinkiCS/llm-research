@@ -17,16 +17,26 @@ export const ragUse = async (index: string, query: string, options = { k: 3 }) =
 
   const ragResult = results.documents.map((doc) => doc.value.content).join('\n\n---\n\n');
   
-  const systemPrompt = `Olet kurssiassistentti tietojenkäsittelytieteen ohjelmistotuotantokurssilla. Vastaa opiskelijan kyselyihin.\n\nSeuraavat kurssimateriaalin osat voivat olla relevantteja:\n${ragResult}\n\Opiskelijan kysymys: ${query}\nVastaus:`;
+  const systemPrompt = [
+    `Olet kurssiassistentti tietojenkäsittelytieteen ohjelmistotuotantokurssilla.`,
+    `Vastaa opiskelijan kysymyksiin liittyen kurssiin.`,
+    `Seuraavat kurssimateriaalin osat sisältävät hyödyllistä tietoa:`,
+    ragResult,
+    `---`,
+    `Opiskelijan kysymys: "${query}"`,
+    `Vastaus:`,
+  ].join('\n');
 
   console.log(`\nSystem Prompt:\n${systemPrompt}`);
 
-  const responseMessage = await getCompletion([
+  const response = await getCompletion([
     {
-      role: 'user',
+      role: 'system',
       content: systemPrompt,
     },
   ]);
 
-  console.log(`Response:\n${responseMessage.content}`);
+  for await (const chunk of response) {
+    process.stdout.write(chunk.message.content);
+  }
 }

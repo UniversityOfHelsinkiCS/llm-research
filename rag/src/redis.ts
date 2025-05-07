@@ -1,4 +1,5 @@
 import { createClient } from 'redis'
+import { config } from './config.ts'
 
 const redisClient = createClient({
   url:  `redis://localhost:6379`,
@@ -9,8 +10,6 @@ await redisClient.connect().then(() => {
 }).catch((err) => {
   console.error('Redis client connection error', err)
 })
-
-const DIM = 768
 
 export const createIndex = async (indexName: string) => {
   try {
@@ -27,7 +26,7 @@ export const createIndex = async (indexName: string) => {
           type: 'VECTOR',
           TYPE: 'FLOAT32',
           ALGORITHM: 'HNSW',
-          DIM: DIM,
+          DIM: config.EMBED_DIM,
           DISTANCE_METRIC: 'L2',
         },
       },
@@ -51,7 +50,7 @@ export const addDocument = async (id: string, metadata: { [key: string]: any } |
   const embeddingBuffer = Buffer.copyBytesFrom(new Float32Array(embedding))
 
   // Check if the embedding length is correct
-  if (embeddingBuffer.length !== 4 * DIM) {
+  if (embeddingBuffer.length !== 4 * config.EMBED_DIM) {
     throw new Error(`Embedding length is incorrect, got ${embeddingBuffer.length} bytes`)
   }
 
@@ -67,7 +66,7 @@ export const addDocument = async (id: string, metadata: { [key: string]: any } |
 export const search = async (indexName: string, embedding: number[], k: number) => {
   const embeddingBuffer = Buffer.copyBytesFrom(new Float32Array(embedding))
 
-  if (embeddingBuffer.length !== 4 * DIM) {
+  if (embeddingBuffer.length !== 4 * config.EMBED_DIM) {
     throw new Error(`Embedding length is incorrect, got ${embeddingBuffer.length} bytes`)
   }
 

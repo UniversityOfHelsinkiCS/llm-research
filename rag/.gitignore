@@ -1,3 +1,4 @@
 node_modules
 pipeline
 .DS_Store
+.env
