@@ -1,9 +1,6 @@
-import dotenv from "dotenv";
 import type OpenAI from "openai";
 import type { AssistantTool } from "openai/resources/beta/assistants.mjs";
 import { EventEmitter } from "events";
-
-dotenv.config();
 
 const tools: AssistantTool[] = [
   {
@@ -27,11 +24,11 @@ const tools: AssistantTool[] = [
   },
 ];
 
-export const startAssistant = async (instructions: string, prompt: string, openai: OpenAI) => {
+export const startAssistant = async (instructions: string, prompt: string, openai: OpenAI, model: string) => {
   const assistant = await openai.beta.assistants.create({
     name: "CurreChat",
     instructions,
-    model: process.env.GPT_4O_MINI as string,
+    model,
     // tools,
   });
 

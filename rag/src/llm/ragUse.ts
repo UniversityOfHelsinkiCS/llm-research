@@ -2,14 +2,14 @@ import { search } from "../redis.ts";
 import { startAssistant } from "./assistant.ts";
 import { getAzureOpenAIClient } from "./azure.ts";
 import { getQueryEmbedding } from "./embed.ts";
-import { getOllamaOpenAIClient } from "./ollama.ts";
 
 type RagUseOptions = {
   k: number;
-  api: "ollama" | "azure";
+  api: "azure";
+  model: string;
 };
 
-export const ragUse = async (index: string, query: string, options: RagUseOptions = { k: 3, api: "azure" }) => {
+export const ragUse = async (index: string, query: string, options: RagUseOptions = { k: 3, api: "azure", model: process.env.GPT_4O_MINI! }) => {
   const embedding = await getQueryEmbedding(query);
   const results = await search(index, embedding, options.k) as {
       documents: {
@@ -36,7 +36,7 @@ export const ragUse = async (index: string, query: string, options: RagUseOption
 
   const instruction2 = "You are pokemin expert";
 
-  const client = options.api === "azure" ? getAzureOpenAIClient() : getOllamaOpenAIClient();
+  const client = getAzureOpenAIClient()
 
-  await startAssistant(instruction2, query, client);
+  await startAssistant(instruction2, query, client, options.model)
 };
