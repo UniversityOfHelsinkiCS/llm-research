@@ -2,7 +2,6 @@ import dotenv from "dotenv";
 import { AzureOpenAI } from "openai";
 import type { AssistantTool } from "openai/resources/beta/assistants.mjs";
 import { EventEmitter } from "events";
-import { threadId } from "worker_threads";
 
 dotenv.config();
 

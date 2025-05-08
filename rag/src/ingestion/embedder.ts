@@ -2,7 +2,7 @@ import { Transform } from "node:stream";
 import type { Chunk } from "./chunkingAlgorithms.ts";
 import { mkdirSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
-import { getEmbedding } from "../llm/embed.ts";
+import { getDocumentEmbedding } from "../llm/embed.ts";
 
 export type EmbeddedChunk = Chunk & {
    embedding: number[]
@@ -21,7 +21,7 @@ export class Embedder extends Transform {
   }
 
   _transform(chunk: Chunk, _encoding: BufferEncoding, callback: (error?: Error | null) => void) {
-    getEmbedding(chunk.content.join('\n')).then((embedding) => {
+    getDocumentEmbedding(chunk.content.join('\n')).then((embedding) => {
       const embeddedChunk: EmbeddedChunk = {
         ...chunk,
         embedding,

@@ -2,14 +2,13 @@ import "dotenv/config";
 
 import { Command } from "commander";
 import { createIndex, search } from "./redis.ts";
-import { getEmbedding } from "./llm/embed.ts";
+import { getQueryEmbedding } from "./llm/embed.ts";
 import { ingestionPipeline } from "./ingestion/pipeline.ts";
 import { getCompletion } from "./llm/completion.ts";
 import { ragUse } from "./llm/ragUse.ts";
-import { startAssistant } from "./llm/assistant.ts";
 
 const query = async (index: string, query: string) => {
-  const embedding = await getEmbedding(query);
+  const embedding = await getQueryEmbedding(query);
   const results = (await search(index, embedding, 5)) as {
     documents: {
       id: string;
