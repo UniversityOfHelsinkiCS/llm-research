@@ -38,5 +38,7 @@ export const ragUse = async (index: string, query: string, options: RagUseOption
 
   const client = getAzureOpenAIClient()
 
+  console.log("OPTS", options)
+
   await startAssistant(instruction2, query, client, options.model)
 };

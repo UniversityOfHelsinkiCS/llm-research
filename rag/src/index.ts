@@ -70,7 +70,7 @@ program
   .description("Prompt the model using rag")
   .argument("<index>", "Index name")
   .argument("<query>", "Query to search for")
-  .option("-k, --k <number>", "Number of results to return", "3")
+  // .option("-k, --k <number>", "Number of results to return", "3")
   .action(ragUse);
 
 program.parse();
