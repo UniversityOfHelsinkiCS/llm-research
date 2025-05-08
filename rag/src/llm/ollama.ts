@@ -1,4 +1,5 @@
 import { Ollama } from 'ollama'
+import { OpenAI } from 'openai'
 
 export const ollama = new Ollama({ host: 'http://localhost:11434' })
 
@@ -24,4 +25,13 @@ export const ensureModel = async (modelName: string) => {
   } catch (error) {
     console.error('Error pulling model:', error)
   }
+}
+
+export const getOllamaOpenAIClient = () => {
+  const endpoint = 'http://localhost:11434/v1/';
+  
+  return new OpenAI({
+    apiKey: 'not-needed',
+    baseURL: endpoint,
+  });
 }

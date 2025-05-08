@@ -1,20 +1,9 @@
 import dotenv from "dotenv";
-import { AzureOpenAI } from "openai";
+import type OpenAI from "openai";
 import type { AssistantTool } from "openai/resources/beta/assistants.mjs";
 import { EventEmitter } from "events";
 
 dotenv.config();
-
-const endpoint = `https://${process.env.AZURE_RESOURCE}.openai.azure.com/`;
-
-const deployment = process.env.GPT_4O;
-const apiVersion = "2025-03-01-preview";
-const openai = new AzureOpenAI({
-  apiKey: process.env.AZURE_API_KEY,
-  deployment,
-  apiVersion,
-  endpoint,
-});
 
 const tools: AssistantTool[] = [
   {
@@ -38,7 +27,7 @@ const tools: AssistantTool[] = [
   },
 ];
 
-export const startAssistant = async (instructions: string, prompt: string) => {
+export const startAssistant = async (instructions: string, prompt: string, openai: OpenAI) => {
   const assistant = await openai.beta.assistants.create({
     name: "CurreChat",
     instructions,
