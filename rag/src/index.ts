@@ -70,7 +70,9 @@ program
   .description("Prompt the model using rag")
   .argument("<index>", "Index name")
   .argument("<query>", "Query to search for")
-  // .option("-k, --k <number>", "Number of results to return", "3")
+  .option("-k, --k <number>", "Number of results to return", "3")
+  .option("--api, --api <string>", "Api", "azure")
+  .option("--model, --model <string>", "Model", process.env.GPT_4O_MINI!)
   .action(ragUse);
 
 program.parse();
