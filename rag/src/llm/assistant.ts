@@ -1,5 +1,8 @@
 import dotenv from "dotenv";
 import { AzureOpenAI } from "openai";
+import type { AssistantTool } from "openai/resources/beta/assistants.mjs";
+import { EventEmitter } from "events";
+import { threadId } from "worker_threads";
 
 dotenv.config();
 
@@ -14,51 +17,150 @@ const openai = new AzureOpenAI({
   endpoint,
 });
 
-export const getResponse = async (messages: any) => {
-  const response = await openai.responses.create({
-    model: process.env.GPT_4O as string,
-    input: "Write a one-sentence bedtime story about a unicorn.",
-  });
-
-  console.log(response.output_text);
-};
+const tools: AssistantTool[] = [
+  {
+    type: "function",
+    function: {
+      name: "get_pokemons",
+      description:
+        "Everytime when pokemons are mentioned, call this funciton to get a pokemon that is related to the context.",
+      parameters: {
+        type: "string",
+        properties: {
+          pokemon_name: {
+            type: "string",
+            description: "A pokemon that is related to the context.",
+          },
+        },
+        required: ["pokemon"],
+        // additionalProperties: false,
+      },
+    },
+  },
+];
 
 export const startAssistant = async (instructions: string, prompt: string) => {
   const assistant = await openai.beta.assistants.create({
-    name: "Current Assistant",
+    name: "CurreChat",
     instructions,
     model: process.env.GPT_4O_MINI as string,
+    // tools,
   });
+
   const thread = await openai.beta.threads.create();
   const message = await openai.beta.threads.messages.create(thread.id, {
     role: "user",
     content: prompt,
   });
 
-  const run = openai.beta.threads.runs
-    .stream(thread.id, {
-      assistant_id: assistant.id,
-    })
-    .on("textCreated", (text) => process.stdout.write(" 🤖 >> "))
-    .on("textDelta", (textDelta, snapshot) =>
-      process.stdout.write(textDelta.value || "")
-    )
-    .on("toolCallCreated", (toolCall) =>
-      process.stdout.write(`\ 🤖 >> ${toolCall.type}\n\n`)
-    )
-    .on("toolCallDelta", (toolCallDelta, snapshot) => {
-      if (toolCallDelta.type === "code_interpreter") {
-        if (toolCallDelta.code_interpreter?.input) {
-          process.stdout.write(toolCallDelta.code_interpreter.input);
-        }
-        if (toolCallDelta.code_interpreter?.outputs) {
-          process.stdout.write("\noutput >\n");
-          toolCallDelta.code_interpreter.outputs.forEach((output) => {
-            if (output.type === "logs") {
-              process.stdout.write(`\n${output.logs}\n`);
-            }
-          });
-        }
-      }
-    });
+  const eventHandler = new EventHandler(openai);
+  eventHandler.on("event", eventHandler.onEvent.bind(eventHandler));
+
+  const stream = openai.beta.threads.runs.stream(
+    thread.id,
+    { assistant_id: assistant.id },
+    eventHandler as any
+  );
+
+  for await (const event of stream) {
+    eventHandler.emit("event", event);
+  }
+
+  // const run = openai.beta.threads.runs
+  //   .stream(thread.id, {
+  //     assistant_id: assistant.id,
+  //   })
+  //   .on("textCreated", (text) => process.stdout.write(" 🤖 >> "))
+  //   .on("textDelta", (textDelta, snapshot) =>
+  //     process.stdout.write(textDelta.value || "")
+  //   )
+  //   .on("toolCallCreated", (toolCall) =>
+  //     process.stdout.write(`\ 🤖 >> ${toolCall.type}\n\n`)
+  //   )
+  //   .on("toolCallDelta", (toolCallDelta, snapshot) => {
+  //     if (toolCallDelta.type === "code_interpreter") {
+  //       if (toolCallDelta.code_interpreter?.input) {
+  //         process.stdout.write(toolCallDelta.code_interpreter.input);
+  //       }
+  //       if (toolCallDelta.code_interpreter?.outputs) {
+  //         process.stdout.write("\noutput >\n");
+  //         toolCallDelta.code_interpreter.outputs.forEach((output) => {
+  //           if (output.type === "logs") {
+  //             process.stdout.write(`\n${output.logs}\n`);
+  //           }
+  //         });
+  //       }
+  //     }
+  //   });
 };
+
+class EventHandler extends EventEmitter {
+  private client: any;
+
+  constructor(client: any) {
+    super();
+    this.client = client;
+  }
+
+  async onEvent(event) {
+    try {
+      console.log("do");
+      // console.log(event);
+      // Retrieve events that are denoted with 'requires_action'
+      // since these will have our tool_calls
+      if (event.event === "thread.run.requires_action") {
+        console.log("Requires action event received:", event);
+        await this.handleRequiresAction(
+          event.data,
+          event.data.id,
+          event.data.thread_id
+        );
+      }
+    } catch (error) {
+      console.error("Error handling event:", error);
+    }
+  }
+
+  async handleRequiresAction(data, runId, threadId) {
+    try {
+      const toolOutputs =
+        data.required_action.submit_tool_outputs.tool_calls.map((toolCall) => {
+          if (toolCall.function.name === "get_pokemons") {
+            const answer = "Pikachu";
+
+            return {
+              tool_call_id: toolCall.id,
+              output: answer,
+            };
+          }
+
+          // else if (toolCall.function.name === "funtion_2") {
+          //   return {
+          //     tool_call_id: toolCall.id,
+          //     output: "0.06",
+          //   };
+          // }
+        });
+      // Submit all the tool outputs at the same time
+      await this.submitToolOutputs(toolOutputs, runId, threadId);
+    } catch (error) {
+      console.error("Error processing required action:", error);
+    }
+  }
+
+  async submitToolOutputs(toolOutputs, runId, threadId) {
+    try {
+      // Use the submitToolOutputsStream helper
+      const stream = this.client.beta.threads.runs.submitToolOutputsStream(
+        threadId,
+        runId,
+        { tool_outputs: toolOutputs }
+      );
+      for await (const event of stream) {
+        this.emit("event", event);
+      }
+    } catch (error) {
+      console.error("Error submitting tool outputs:", error);
+    }
+  }
+}

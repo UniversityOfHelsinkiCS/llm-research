@@ -6,7 +6,7 @@ import { getEmbedding } from "./llm/embed.ts";
 import { ingestionPipeline } from "./ingestion/pipeline.ts";
 import { getCompletion } from "./llm/completion.ts";
 import { ragUse } from "./llm/ragUse.ts";
-import { getResponse, startAssistant } from "./llm/assistant.ts";
+import { startAssistant } from "./llm/assistant.ts";
 
 const query = async (index: string, query: string) => {
   const embedding = await getEmbedding(query);

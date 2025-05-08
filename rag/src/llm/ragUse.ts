@@ -34,5 +34,7 @@ export const ragUse = async (
     // `Vastaus:`,
   ].join("\n");
 
-  await startAssistant(instruction, query);
+  const instruction2 = "You are pokemin expert";
+
+  await startAssistant(instruction2, query);
 };
