@@ -2,19 +2,32 @@ import type OpenAI from "openai";
 import type { AssistantTool } from "openai/resources/beta/assistants.mjs";
 import { EventEmitter } from "events";
 
+dotenv.config();
+
+const endpoint = `https://${process.env.AZURE_RESOURCE}.openai.azure.com/`;
+
+const deployment = process.env.GPT_4O;
+const apiVersion = "2025-03-01-preview";
+const openai = new AzureOpenAI({
+  apiKey: process.env.AZURE_API_KEY,
+  deployment,
+  apiVersion,
+  endpoint,
+});
+
 const tools: AssistantTool[] = [
   {
     type: "function",
     function: {
-      name: "get_pokemons",
+      name: "getPokemon",
       description:
-        "Everytime when pokemons are mentioned, call this funciton to get a pokemon that is related to the context.",
+        "Everytime when pokemons are mentioned, call this function to get details about a pokemon that is related to the context by name. Pass a pokemons name as a parameter you think fits the description.",
       parameters: {
-        type: "string",
+        type: "object",
         properties: {
           pokemon_name: {
             type: "string",
-            description: "A pokemon that is related to the context.",
+            description: "A pokemons name.",
           },
         },
         required: ["pokemon"],
@@ -24,12 +37,17 @@ const tools: AssistantTool[] = [
   },
 ];
 
-export const startAssistant = async (instructions: string, prompt: string, openai: OpenAI, model: string) => {
+export const startAssistant = async (
+  instructions: string,
+  prompt: string,
+  openai: OpenAI,
+  model: string
+) => {
   const assistant = await openai.beta.assistants.create({
     name: "CurreChat",
     instructions,
-    model,
-    // tools,
+    model: process.env.GPT_4O_MINI as string,
+    tools,
   });
 
   const thread = await openai.beta.threads.create();
@@ -89,10 +107,8 @@ class EventHandler extends EventEmitter {
 
   async onEvent(event) {
     try {
-      console.log("do");
-      // console.log(event);
-      // Retrieve events that are denoted with 'requires_action'
-      // since these will have our tool_calls
+      console.log("do", event.event);
+
       if (event.event === "thread.run.requires_action") {
         console.log("Requires action event received:", event);
         await this.handleRequiresAction(
@@ -110,22 +126,20 @@ class EventHandler extends EventEmitter {
     try {
       const toolOutputs =
         data.required_action.submit_tool_outputs.tool_calls.map((toolCall) => {
-          if (toolCall.function.name === "get_pokemons") {
-            const answer = "Pikachu";
+          if (toolCall.function.name === "getPokemon") {
+            const argument = toolCall.function.arguments.pokemon_name;
+            console.log("Tool call:", toolCall.function.arguments);
+            console.log("Argument:", argument);
+
+            const answer = async () => await getPokemon(argument);
 
             return {
               tool_call_id: toolCall.id,
               output: answer,
             };
           }
-
-          // else if (toolCall.function.name === "funtion_2") {
-          //   return {
-          //     tool_call_id: toolCall.id,
-          //     output: "0.06",
-          //   };
-          // }
         });
+
       // Submit all the tool outputs at the same time
       await this.submitToolOutputs(toolOutputs, runId, threadId);
     } catch (error) {
@@ -149,3 +163,20 @@ class EventHandler extends EventEmitter {
     }
   }
 }
+
+const getPokemon = async (pokemonName: string) => {
+  // Simulate an API call to get the Pokemon data
+  const response = await fetch(
+    `https://pokeapi.co/api/v2/pokemon/${pokemonName}`
+  );
+  const data = await response.json();
+  const pokemonData = {
+    name: data.name,
+    height: data.height,
+    weight: data.weight,
+    types: data.types.map((type) => type.type.name),
+    abilities: data.abilities.map((ability) => ability.ability.name),
+  };
+
+  return pokemonData;
+};
