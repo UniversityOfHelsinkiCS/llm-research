@@ -3,6 +3,7 @@ import type { Chunk } from "./chunkingAlgorithms.ts";
 import { mkdirSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import { getDocumentEmbedding } from "../llm/embed.ts";
+import OpenAI from "openai";
 
 export type EmbeddedChunk = Chunk & {
    embedding: number[]
@@ -10,10 +11,12 @@ export type EmbeddedChunk = Chunk & {
 
 export class Embedder extends Transform {
   private cachePath: string;
+  private client: OpenAI;
 
-  constructor(cachePath: string) {
+  constructor(client: OpenAI, cachePath: string) {
     super({ objectMode: true });
 
+    this.client = client
     this.cachePath = cachePath + "/embeddings";
 
     // Make sure the cache path exists
@@ -21,7 +24,7 @@ export class Embedder extends Transform {
   }
 
   _transform(chunk: Chunk, _encoding: BufferEncoding, callback: (error?: Error | null) => void) {
-    getDocumentEmbedding(chunk.content.join('\n')).then((embedding) => {
+    getDocumentEmbedding(this.client, chunk.content.join('\n')).then((embedding) => {
       const embeddedChunk: EmbeddedChunk = {
         ...chunk,
         embedding,

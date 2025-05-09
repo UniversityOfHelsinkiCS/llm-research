@@ -6,31 +6,7 @@ import { getQueryEmbedding } from "./llm/embed.ts";
 import { ingestionPipeline } from "./ingestion/pipeline.ts";
 import { getCompletion } from "./llm/completion.ts";
 import { ragUse } from "./llm/ragUse.ts";
-
-const query = async (index: string, query: string) => {
-  const embedding = await getQueryEmbedding(query);
-  const results = (await search(index, embedding, 5)) as {
-    documents: {
-      id: string;
-      value: {
-        title: string;
-        content: string;
-        score: number;
-      };
-    }[];
-  };
-
-  if (Array.isArray(results?.documents)) {
-    results.documents
-      .sort((a, b) => a.value.score - b.value.score)
-      .forEach((doc) => {
-        // console.log(`Title: ${doc.value.title}`);
-        console.log(`Content: ${doc.value.content}`);
-        console.log(`Score: ${doc.value.score}`);
-        console.log("---");
-      });
-  }
-};
+import { getOllamaOpenAIClient } from "./llm/ollama.ts";
 
 const program = new Command();
 program
@@ -40,7 +16,8 @@ program
   .argument("<index>", "Index name")
   .action(async (loadpath: string, index: string) => {
     await createIndex(index);
-    await ingestionPipeline(loadpath);
+    const client = getOllamaOpenAIClient()
+    await ingestionPipeline(client, loadpath);
     console.log("Documents loaded successfully");
   });
 
@@ -48,21 +25,52 @@ program
   .command("query")
   .argument("<index>", "Index name")
   .argument("<query>", "Query to search for")
-  .action(query);
+  .action(async (index: string, query: string) => {
+    const client = getOllamaOpenAIClient()
+    const embedding = await getQueryEmbedding(client, query);
+    const results = (await search(index, embedding, 5)) as {
+      documents: {
+        id: string;
+        value: {
+          title: string;
+          content: string;
+          score: number;
+          metadata: string;
+        };
+      }[];
+    };
+  
+    if (Array.isArray(results?.documents)) {
+      results.documents
+        .sort((a, b) => a.value.score - b.value.score)
+        .forEach((doc) => {
+          const metadata = JSON.parse(doc.value.metadata)
+          console.log(metadata.titleHierarchy.join(' > '))
+        });
+    }
+  });
 
 program
   .command("prompt")
   .description("Prompt the model")
   .argument("<prompt>", "Prompt to send to the model")
-  .action(async (prompt: string) => {
-    const responseMessage = await getCompletion([
-      {
-        role: "user",
-        content: prompt,
-      },
-    ]);
+  .option("-m, --model <string>", "Model", process.env.GPT_4O_MINI!)
+  .action(async (prompt: string, { model }) => {
+    const client = getOllamaOpenAIClient();
+    const responseMessage = await getCompletion(
+      client,
+      model,
+      [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ]
+    );
 
-    console.log(`Response:\n${JSON.stringify(responseMessage, null, 2)}`);
+    for await (const msg of responseMessage) {
+      process.stdout.write(msg.choices[0].delta.content ?? '')
+    }
   });
 
 program

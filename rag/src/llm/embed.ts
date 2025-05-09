@@ -1,25 +1,19 @@
-import { randomUUID } from "node:crypto"
-import { ollama, ensureModel } from "./ollama.ts"
 import { config } from "../config.ts"
+import OpenAI from "openai"
 
-export const getDocumentEmbedding = async (document: string) => {
-  return await getEmbedding(`search_document: ${document}`)
+export const getDocumentEmbedding = async (client: OpenAI, document: string) => {
+  return await getEmbeddingVector(client, `search_document: ${document}`)
 }
 
-export const getQueryEmbedding = async (query: string) => {
-  return await getEmbedding(`search_query: ${query}`)
+export const getQueryEmbedding = async (client: OpenAI, query: string) => {
+  return await getEmbeddingVector(client, `search_query: ${query}`)
 }
 
-const getEmbedding = async (query: string) => {
-  await ensureModel(config.EMBED_MODEL)
-
-  const timeId = `${randomUUID()} --- Embedding time (${query.length} chars)`
-  console.time(timeId)
-  const response = await ollama.embed({
+const getEmbeddingVector = async (client: OpenAI, query: string) => {
+  const response = await client.embeddings.create({
     model: config.EMBED_MODEL,
     input: query,
   })
-  console.timeEnd(timeId)
 
-  return response.embeddings[0]
+  return response.data[0].embedding
 }

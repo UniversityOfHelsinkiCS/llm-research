@@ -4,6 +4,7 @@ import { FileLoader } from './loader.ts';
 import { Chunker } from './chunker.ts';
 import { Embedder } from './embedder.ts';
 import { RedisStorer } from './storer.ts';
+import OpenAI from 'openai';
 
 // Pipeline debug cache in pipeline/
 // Check if exists, if not create it.
@@ -20,13 +21,13 @@ const initPipelineCache = async () => {
 };
 
 
-export const ingestionPipeline = async (loadpath: string) => {
+export const ingestionPipeline = async (client: OpenAI, loadpath: string) => {
   await initPipelineCache();
-  
+
   await pipeline([
     new FileLoader(loadpath),
     new Chunker(pipelineCachePath),
-    new Embedder(pipelineCachePath),
+    new Embedder(client, pipelineCachePath),
     new RedisStorer(),
-  ])  
+  ])
 }

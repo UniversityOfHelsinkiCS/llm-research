@@ -5,7 +5,7 @@ export const ollama = new Ollama({ host: 'http://localhost:11434' })
 
 const isModelPulled: Record<string, boolean> = {}
 
-export const ensureModel = async (modelName: string) => {
+const _ensureModel = async (modelName: string) => {
   if (isModelPulled[modelName]) {
     return
   }

@@ -1,12 +1,13 @@
-import { config } from "../config.ts"
-import { ollama, ensureModel } from "./ollama.ts"
-import type { Message } from "ollama"
+import OpenAI from "openai"
 
-export const getCompletion = async (messages: Message[]) => {
-  await ensureModel(config.COMPLETION_MODEL)
+export const getCompletion = async (
+  client: OpenAI, 
+  model: string,
+  messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[]
+) => {
 
-  const response = await ollama.chat({
-    model: config.COMPLETION_MODEL,
+  const response = await client.chat.completions.create({
+    model,
     messages,
     stream: true,
   })
