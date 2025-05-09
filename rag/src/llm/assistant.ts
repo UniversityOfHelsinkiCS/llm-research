@@ -8,7 +8,7 @@ const tools: AssistantTool[] = [
     function: {
       name: "getPokemon",
       description:
-        "Everytime when pokemons are mentioned, call this function to get details about a pokemon that is related to the context by name. Pass a pokemons name as a parameter you think fits the description.",
+        "Everytime when pokemons are needed, call this function to get details about a pokemon that is related to the context by name. Pass a pokemons name as a parameter you think fits the description.",
       parameters: {
         type: "object",
         properties: {
@@ -85,26 +85,33 @@ export const startAssistant = async (
 };
 
 class EventHandler extends EventEmitter {
-  private openai: any;
+  private openai: OpenAI;
 
-  constructor(openai: any) {
+  constructor(openai: OpenAI) {
     super();
     this.openai = openai;
   }
 
   async onEvent(event) {
-    try {
-      console.log("do", event.event);
+    // console.log("Event type:", event.event);
 
-      if (event.event === "thread.message.created") {
-      }
-      if (event.event === "thread.run.requires_action") {
-        console.log("Requires action event received:", event);
-        await this.handleRequiresAction(
-          event.data,
-          event.data.id,
-          event.data.thread_id
-        );
+    try {
+      switch (event.event) {
+        case "thread.message.created":
+          process.stdout.write(" 🤖 Assistant >> ");
+          break;
+        case "thread.message.delta":
+          process.stdout.write(event.data.delta.content[0].text.value || "");
+          break;
+        case "thread.run.requires_action":
+          await this.handleRequiresAction(
+            event.data,
+            event.data.id,
+            event.data.thread_id
+          );
+          break;
+        default:
+          break;
       }
     } catch (error) {
       console.error("Error handling event:", error);
@@ -121,8 +128,12 @@ class EventHandler extends EventEmitter {
                 toolCall.function.arguments
               ).pokemon_name;
 
-              const answer = await getPokemon(argument);
-              console.log("Answer:", answer);
+              let answer = "";
+              try {
+                answer = await getPokemon(argument);
+              } catch (error) {
+                console.error("Error calling getPokemon:", argument);
+              }
 
               return {
                 tool_call_id: toolCall.id,
@@ -140,9 +151,8 @@ class EventHandler extends EventEmitter {
     }
   }
 
-  async submitToolOutputs(toolOutputs, runId, threadId) {
+  async submitToolOutputs(toolOutputs, runId: string, threadId: string) {
     try {
-      // Use the submitToolOutputsStream helper
       const stream = this.openai.beta.threads.runs.submitToolOutputsStream(
         threadId,
         runId,
@@ -157,7 +167,10 @@ class EventHandler extends EventEmitter {
   }
 }
 
+// function for testing funciton calling
 const getPokemon = async (pokemonName: string) => {
+  console.log("getPokemon", pokemonName);
+
   // Simulate an API call to get the Pokemon data
   const response = await fetch(
     `https://pokeapi.co/api/v2/pokemon/${pokemonName}`
@@ -177,5 +190,5 @@ const getPokemon = async (pokemonName: string) => {
     abilities: data.abilities.map((ability) => ability.ability.name),
   };
 
-  return JSON.stringify(pokemonData, null, 2);
+  return JSON.stringify(pokemonData);
 };
