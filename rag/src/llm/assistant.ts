@@ -17,7 +17,7 @@ const tools: AssistantTool[] = [
             description: "A pokemons name.",
           },
         },
-        required: ["pokemon"],
+        required: ["pokemon_name"],
         // additionalProperties: false,
       },
     },
@@ -85,17 +85,19 @@ export const startAssistant = async (
 };
 
 class EventHandler extends EventEmitter {
-  private client: any;
+  private openai: any;
 
-  constructor(client: any) {
+  constructor(openai: any) {
     super();
-    this.client = client;
+    this.openai = openai;
   }
 
   async onEvent(event) {
     try {
       console.log("do", event.event);
 
+      if (event.event === "thread.message.created") {
+      }
       if (event.event === "thread.run.requires_action") {
         console.log("Requires action event received:", event);
         await this.handleRequiresAction(
@@ -111,21 +113,25 @@ class EventHandler extends EventEmitter {
 
   async handleRequiresAction(data, runId, threadId) {
     try {
-      const toolOutputs =
-        data.required_action.submit_tool_outputs.tool_calls.map((toolCall) => {
-          if (toolCall.function.name === "getPokemon") {
-            const argument = toolCall.function.arguments.pokemon_name;
-            console.log("Tool call:", toolCall.function.arguments);
-            console.log("Argument:", argument);
+      const toolOutputs = await Promise.all(
+        data.required_action.submit_tool_outputs.tool_calls.map(
+          async (toolCall) => {
+            if (toolCall.function.name === "getPokemon") {
+              const argument = JSON.parse(
+                toolCall.function.arguments
+              ).pokemon_name;
 
-            const answer = async () => await getPokemon(argument);
+              const answer = await getPokemon(argument);
+              console.log("Answer:", answer);
 
-            return {
-              tool_call_id: toolCall.id,
-              output: answer,
-            };
+              return {
+                tool_call_id: toolCall.id,
+                output: answer,
+              };
+            }
           }
-        });
+        )
+      );
 
       // Submit all the tool outputs at the same time
       await this.submitToolOutputs(toolOutputs, runId, threadId);
@@ -137,7 +143,7 @@ class EventHandler extends EventEmitter {
   async submitToolOutputs(toolOutputs, runId, threadId) {
     try {
       // Use the submitToolOutputsStream helper
-      const stream = this.client.beta.threads.runs.submitToolOutputsStream(
+      const stream = this.openai.beta.threads.runs.submitToolOutputsStream(
         threadId,
         runId,
         { tool_outputs: toolOutputs }
@@ -165,5 +171,5 @@ const getPokemon = async (pokemonName: string) => {
     abilities: data.abilities.map((ability) => ability.ability.name),
   };
 
-  return pokemonData;
+  return JSON.stringify(pokemonData, null, 2);
 };
