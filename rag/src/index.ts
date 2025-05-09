@@ -28,7 +28,7 @@ program
   .action(async (index: string, query: string) => {
     const client = getOllamaOpenAIClient()
     const embedding = await getQueryEmbedding(client, query);
-    const results = (await search(index, embedding, 5)) as {
+    const results = await search(index, embedding, 5) as any as {
       documents: {
         id: string;
         value: {
@@ -36,7 +36,7 @@ program
           content: string;
           score: number;
           metadata: string;
-        };
+        }
       }[];
     };
   
