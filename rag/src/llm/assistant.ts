@@ -9,7 +9,7 @@ export const startAssistant = async (
   openai: OpenAI,
   model: string
 ) => {
-  const tools: AssistantTool[] = [getPokemonTool.description];
+  const tools: AssistantTool[] = [getPokemonTool.description as AssistantTool];
 
   const assistant = await openai.beta.assistants.create({
     name: "CurreChat",

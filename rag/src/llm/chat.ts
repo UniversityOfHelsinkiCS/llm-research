@@ -1,3 +1,5 @@
+const main = () => {};
+
 const startChat = () => {
   console.log("Chat started");
 };
