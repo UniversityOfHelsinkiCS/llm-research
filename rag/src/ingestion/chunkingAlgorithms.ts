@@ -68,6 +68,23 @@ export const createTitleChunks = (file: FileData): Chunk[] => {
   return chunks
 }
 
+export const createSplittedTitleChunks = (file: FileData): Chunk[] => {
+  return createTitleChunks(file).flatMap((chunk) => {
+    const title = chunk.metadata?.title
+    const titleHierarchy = chunk.metadata?.titleHierarchy
+
+    return chunk.content.join('\n').split('\n\n').map((section, index) => ({
+        id: `${chunk.id}-${index}`,
+        content: section.split('\n'),
+        metadata: {
+          title: `${title} - ${index + 1}`,
+          titleHierarchy: [...titleHierarchy, index + 1],
+        }
+      })
+    )
+  })
+}
+
 export const createStaticChunks = (file: FileData): Chunk[] => {
   const lines = file.content.split('\n').filter((line) => line.trim() !== '')
 

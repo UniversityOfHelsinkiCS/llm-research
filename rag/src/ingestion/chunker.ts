@@ -1,5 +1,5 @@
 import { Transform } from "node:stream";
-import { createStaticChunks, createTitleChunks } from "./chunkingAlgorithms.ts";
+import { createSplittedTitleChunks, createStaticChunks, createTitleChunks } from "./chunkingAlgorithms.ts";
 import type { FileData } from "./loader.ts";
 import { mkdirSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
@@ -17,7 +17,7 @@ export class Chunker extends Transform {
   }
 
   _transform(data: FileData, _encoding: BufferEncoding, callback: (error?: Error | null) => void) {
-    const chunks = createTitleChunks(data);
+    const chunks = createSplittedTitleChunks(data);
     for (const chunk of chunks) {
       this.push(chunk);
     }
