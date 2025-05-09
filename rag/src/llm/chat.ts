@@ -15,8 +15,8 @@ function printCommands() {
   console.log("CHAT COMMANDS 💬 ---------------------------");
   console.log("s - start chat");
   console.log("l - list chats");
-  console.log("d - delete chat");
   console.log("o - open chat");
+  console.log("d - delete chat");
   console.log("");
 
   console.log("OPENAI COMMANDS 👾 ---------------------------");
@@ -44,10 +44,10 @@ async function command() {
       case "l": // list chats
         break;
 
-      case "d": // delete chat
+      case "o": // open chat
         break;
 
-      case "o": // open chat
+      case "d": // delete chat
         break;
 
       // OpenAI commands  -----------------------------------------------------------------------------------
