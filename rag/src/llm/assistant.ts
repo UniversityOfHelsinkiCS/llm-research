@@ -162,7 +162,13 @@ const getPokemon = async (pokemonName: string) => {
   const response = await fetch(
     `https://pokeapi.co/api/v2/pokemon/${pokemonName}`
   );
-  const data = await response.json();
+  const data = (await response.json()) as {
+    name: string;
+    height: number;
+    weight: number;
+    types: { type: { name: string } }[];
+    abilities: { ability: { name: string } }[];
+  };
   const pokemonData = {
     name: data.name,
     height: data.height,
