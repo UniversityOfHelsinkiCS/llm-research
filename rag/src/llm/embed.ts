@@ -13,6 +13,7 @@ const getEmbeddingVector = async (client: OpenAI, query: string) => {
   const response = await client.embeddings.create({
     model: config.EMBED_MODEL,
     input: query,
+    encoding_format: "float",
   })
 
   return response.data[0].embedding
