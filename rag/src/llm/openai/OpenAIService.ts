@@ -1,136 +1,73 @@
 import { getAzureOpenAIClient } from "../azure.ts";
 import type OpenAI from "openai";
-import fs from "fs";
+import fs, { write } from "fs";
 import type { Thread } from "openai/resources/beta/threads/threads";
 import type { Assistant } from "openai/resources/beta/assistants.mjs";
 
+interface ChatData {
+  thread_id: string;
+  assistant_id: string;
+  assistant_name: string;
+  created_at: string;
+}
+
 export default class OpenAIService {
-  openai: OpenAI;
-  path: string;
+  private openai: OpenAI;
+  private chat_file: string;
 
   constructor() {
     this.openai = getAzureOpenAIClient();
-    this.path = "./src/llm/openai/data/threads.json";
+    this.chat_file = "./src/llm/openai/data/chats.json";
   }
 
-  // ASSISTANT HANDLING -------------------------------------------------------------------
-  getAssistants = async (limit: number): Promise<Assistant[]> => {
-    const assistants = await this.openai.beta.assistants.list({
-      limit,
-      order: "desc",
-    });
-    return assistants.data;
-  };
-
-  // THREAD HANDLING ----------------------------------------------------------------------
-  saveThread = (thread: Thread) => {
-    const newEntry = {
-      id: thread.id,
-      created_at: thread.created_at,
-    };
-
-    // Read existing file (or start with an empty array if file doesn't exist)
-    let existingData = [];
-    if (fs.existsSync(this.path)) {
-      const fileContent = fs.readFileSync(this.path, "utf-8");
-      try {
-        existingData = JSON.parse(fileContent);
-        if (!Array.isArray(existingData)) existingData = [];
-      } catch (err) {
-        console.error("Invalid JSON, resetting to empty array.");
-        existingData = [];
-      }
-    }
-
-    // Add new entry
-    existingData.push(newEntry);
-
-    // Write updated array back to file
+  /**
+   * Creates a new chat for a given assistant and starts a conversation.
+   * @param assistantId - The ID of the assistant to create a chat for
+   */
+  createChat = async (assistantId: string) => {
     try {
-      fs.writeFileSync(this.path, JSON.stringify(existingData, null, 2));
-      return true;
+      const thread = await this.openai.beta.threads.create();
+      const assistant = await this.openai.beta.assistants.retrieve(assistantId);
+
+      const chatData: ChatData = {
+        thread_id: thread.id,
+        assistant_id: assistant.id,
+        assistant_name: assistant.name,
+        created_at: new Date().toISOString(),
+      };
+
+      this.writeJsonFile(this.chat_file, chatData);
     } catch (err) {
-      console.error("Error writing file:", err);
-      return false;
-    }
-  };
-
-  deleteThread = async (threadId: string) => {
-    if (!fs.existsSync(this.path)) {
-      console.error("File does not exist.");
-      return false;
-    }
-
-    let threads;
-    try {
-      const fileContent = fs.readFileSync(this.path, "utf-8");
-      threads = JSON.parse(fileContent);
-
-      if (!Array.isArray(threads)) {
-        console.error("JSON is not an array.");
-        return false;
-      }
-    } catch (err) {
-      console.error("Error reading or parsing file:", err);
-      return false;
-    }
-
-    // Filter out the thread to be deleted
-    const updatedThreads = threads.filter((thread) => thread.id !== threadId);
-
-    // Write updated array back and delete the thread
-    try {
-      fs.writeFileSync(this.path, JSON.stringify(updatedThreads, null, 2));
-    } catch (err) {
-      console.error("Error writing file:", err);
-      return false;
-    }
-
-    // delete from openai
-    try {
-      await this.openai.beta.threads.del(threadId);
-      console.log("Thread deleted from OpenAI successfully!");
-    } catch (err) {
-      console.error("Error deleting thread from OpenAI:", err);
-    }
-
-    return true;
-  };
-
-  getThreads = () => {
-    if (!fs.existsSync(this.path)) {
-      console.warn("No threads file found.");
-      return [];
-    }
-
-    try {
-      const fileContent = fs.readFileSync(this.path, "utf-8");
-      const threads = JSON.parse(fileContent);
-
-      if (!Array.isArray(threads)) {
-        console.error("Invalid format: threads.json should contain an array.");
-        return [];
-      }
-
-      return threads;
-    } catch (err) {
-      console.error("Error reading or parsing threads file:", err);
-      return [];
-    }
-  };
-
-  createThread = async () => {
-    const thread = await this.openai.beta.threads.create();
-    const success = this.saveThread(thread);
-    if (success) return thread;
-    else {
-      await this.openai.beta.threads.del(thread.id);
-      console.error("Failed to save thread locally, deleted from OpenAI.");
+      console.error("Error creating chat:", err);
       return null;
     }
   };
 
-  // MESSAGE HANDLING -----------------------------------------------------------------
+  /**
+   * Starts a chat with a given assistant and thread ID.
+   * @param assistantId - The ID of the assistant to start a chat with
+   * @param threadId - The ID of the thread to start a chat in
+   */
+  startChat = async (assistantId: string, threadId: string) => {};
+
+  /**
+   * This method retrieves a list of assistants from Azure OpenAI.
+   * @param limit - The number of assistants to retrieve
+   * @returns - A promise that resolves to an array of Assistant objects
+   */
+  getAssistants = async (limit: number): Promise<Assistant[]> => {
+    try {
+      const assistants = await this.openai.beta.assistants.list({
+        limit,
+        order: "desc",
+      });
+      return assistants.data;
+    } catch (err) {
+      console.error("Error fetching assistants:", err);
+      return [];
+    }
+  };
+
   addMessageToThread = async (threadId: string, content: string) => {
     try {
       return await this.openai.beta.threads.messages.create(threadId, {
@@ -147,10 +84,7 @@ export default class OpenAIService {
     try {
       const threadMessages = await this.openai.beta.threads.messages.list(
         threadId,
-        {
-          limit: 10,
-          order: "asc",
-        }
+        { order: "asc" }
       );
 
       return threadMessages.data.map((message) => ({
@@ -165,14 +99,10 @@ export default class OpenAIService {
     }
   };
 
-  // RUN HANDLING -----------------------------------------------------------------
   createRun = (threadId: string, assistantId: string) => {
     try {
       return this.openai.beta.threads.runs.stream(threadId, {
         assistant_id: assistantId,
-        metadata: {
-          assistant_id: assistantId,
-        },
       });
     } catch (err) {
       console.error("Error creating run");
@@ -182,5 +112,30 @@ export default class OpenAIService {
 
   cancelRun = async (threadId: string, runId: string) => {
     return await this.openai.beta.threads.runs.cancel(threadId, runId);
+  };
+
+  writeJsonFile = async (file: string, jsonData: ChatData) => {
+    try {
+      let existingData = {};
+
+      try {
+        const fileContent = await fs.promises.readFile(file, "utf8");
+        existingData = JSON.parse(fileContent);
+      } catch (err) {
+        // If file doesn't exist or is empty/corrupted, start fresh
+        if (err.code !== "ENOENT") throw err;
+      }
+
+      const mergedData = {
+        ...existingData,
+        ...jsonData, // new data overwrites existing fields
+      };
+
+      const jsonString = JSON.stringify(mergedData, null, 2);
+      await fs.promises.writeFile(file, jsonString, "utf8");
+      console.log("File written (merged) successfully.");
+    } catch (err) {
+      console.error("Error writing file:", err);
+    }
   };
 }

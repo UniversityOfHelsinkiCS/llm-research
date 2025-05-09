@@ -39,7 +39,6 @@ async function command() {
       // Chat commands -----------------------------------------------------------------------------------
 
       case "s": // start chat
-        console.log("Starting chat...");
         break;
 
       case "l": // list chats
@@ -50,51 +49,6 @@ async function command() {
 
       case "o": // open chat
         break;
-
-      // START DISCUSSION IN ROOM
-      // case "sr":
-      //   rl.question("Room ID: ", async (roomId) => {
-      //     const roomrun = new RoomRunner();
-
-      //     roomrun
-      //       .on("discussionStarted", () => {
-      //         console.log("Discussion started! ✨🚀");
-      //         console.log("");
-      //       })
-      //       .on("nextSpeakerTurn", (assistantId: string) => {
-      //         console.log("Next speaker ⏭️");
-      //         console.log("");
-      //       })
-      //       .on(
-      //         "roomTextCreated",
-      //         (data: { assistantId: string; text: Text }) => {
-      //           console.log("🤖 id: " + data.assistantId);
-      //         }
-      //       )
-      //       .on("roomTextDelta", (data: { textDelta: TextDelta }) => {
-      //         process.stdout.write(data.textDelta.value || "");
-      //       })
-      //       .on("roomTextEnded", () => {
-      //         console.log("");
-      //       })
-      //       .on("speakerTurnEnd", () => {
-      //         console.log("");
-      //       })
-      //       .on("discussionEnded", () => {
-      //         console.log("Discussion ended ⛳");
-      //         console.log("");
-      //       })
-      //       .on("error", (err: any) => {
-      //         console.error("Error in discussion 💀💀💀");
-      //         console.log("");
-      //       });
-
-      //     await roomrun.startDiscussion(roomId);
-
-      //     console.log("");
-      //     command();
-      //   });
-      //   break;
 
       // OpenAI commands  -----------------------------------------------------------------------------------
 
