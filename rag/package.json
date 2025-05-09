@@ -19,6 +19,6 @@
     "redis": "^5.0.1"
   },
   "devDependencies": {
-    "@types/node": "^22.15.12"
+    "@types/node": "^22.15.17"
   }
 }
