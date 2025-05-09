@@ -1,7 +1,7 @@
 import type OpenAI from "openai";
 import type { AssistantTool } from "openai/resources/beta/assistants.mjs";
 import { EventEmitter } from "events";
-import { getPokemonTool } from "./assistant_tools";
+import { getPokemonTool } from "./assistant_tools.ts";
 
 export const startAssistant = async (
   instructions: string,
