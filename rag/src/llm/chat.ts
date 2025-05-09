@@ -25,7 +25,7 @@ function printCommands() {
   console.log("");
 
   console.log("OTHER COMMANDS 🫧 -----------------------------");
-  console.log("c - list commands");
+  console.log("help - list commands");
   console.log("q - quit");
   console.log("");
 }
@@ -97,7 +97,7 @@ async function command() {
 
       // Other commands -----------------------------------------------------------------------------------
 
-      case "lc": // list commands
+      case "help": // list commands
         printCommands();
         command();
         break;
