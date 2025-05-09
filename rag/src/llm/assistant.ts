@@ -1,28 +1,7 @@
 import type OpenAI from "openai";
 import type { AssistantTool } from "openai/resources/beta/assistants.mjs";
 import { EventEmitter } from "events";
-
-const tools: AssistantTool[] = [
-  {
-    type: "function",
-    function: {
-      name: "getPokemon",
-      description:
-        "Everytime when pokemons are needed, call this function to get details about a pokemon that is related to the context by name. Pass a pokemons name as a parameter you think fits the description.",
-      parameters: {
-        type: "object",
-        properties: {
-          pokemon_name: {
-            type: "string",
-            description: "A pokemons name.",
-          },
-        },
-        required: ["pokemon_name"],
-        // additionalProperties: false,
-      },
-    },
-  },
-];
+import { getPokemonTool } from "./assistant_tools";
 
 export const startAssistant = async (
   instructions: string,
@@ -30,6 +9,8 @@ export const startAssistant = async (
   openai: OpenAI,
   model: string
 ) => {
+  const tools: AssistantTool[] = [getPokemonTool.description];
+
   const assistant = await openai.beta.assistants.create({
     name: "CurreChat",
     instructions,
@@ -55,33 +36,6 @@ export const startAssistant = async (
   for await (const event of stream) {
     eventHandler.emit("event", event);
   }
-
-  // const run = openai.beta.threads.runs
-  //   .stream(thread.id, {
-  //     assistant_id: assistant.id,
-  //   })
-  //   .on("textCreated", (text) => process.stdout.write(" 🤖 >> "))
-  //   .on("textDelta", (textDelta, snapshot) =>
-  //     process.stdout.write(textDelta.value || "")
-  //   )
-  //   .on("toolCallCreated", (toolCall) =>
-  //     process.stdout.write(`\ 🤖 >> ${toolCall.type}\n\n`)
-  //   )
-  //   .on("toolCallDelta", (toolCallDelta, snapshot) => {
-  //     if (toolCallDelta.type === "code_interpreter") {
-  //       if (toolCallDelta.code_interpreter?.input) {
-  //         process.stdout.write(toolCallDelta.code_interpreter.input);
-  //       }
-  //       if (toolCallDelta.code_interpreter?.outputs) {
-  //         process.stdout.write("\noutput >\n");
-  //         toolCallDelta.code_interpreter.outputs.forEach((output) => {
-  //           if (output.type === "logs") {
-  //             process.stdout.write(`\n${output.logs}\n`);
-  //           }
-  //         });
-  //       }
-  //     }
-  //   });
 };
 
 class EventHandler extends EventEmitter {
@@ -130,7 +84,7 @@ class EventHandler extends EventEmitter {
 
               let answer = "";
               try {
-                answer = await getPokemon(argument);
+                answer = await getPokemonTool.function(argument);
               } catch (error) {
                 console.error("Error calling getPokemon:", argument);
               }
@@ -166,29 +120,3 @@ class EventHandler extends EventEmitter {
     }
   }
 }
-
-// function for testing funciton calling
-const getPokemon = async (pokemonName: string) => {
-  console.log("getPokemon", pokemonName);
-
-  // Simulate an API call to get the Pokemon data
-  const response = await fetch(
-    `https://pokeapi.co/api/v2/pokemon/${pokemonName}`
-  );
-  const data = (await response.json()) as {
-    name: string;
-    height: number;
-    weight: number;
-    types: { type: { name: string } }[];
-    abilities: { ability: { name: string } }[];
-  };
-  const pokemonData = {
-    name: data.name,
-    height: data.height,
-    weight: data.weight,
-    types: data.types.map((type) => type.type.name),
-    abilities: data.abilities.map((ability) => ability.ability.name),
-  };
-
-  return JSON.stringify(pokemonData);
-};

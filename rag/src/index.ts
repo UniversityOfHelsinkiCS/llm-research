@@ -7,6 +7,7 @@ import { ingestionPipeline } from "./ingestion/pipeline.ts";
 import { getCompletion } from "./llm/completion.ts";
 import { ragUse } from "./llm/ragUse.ts";
 import { getOllamaOpenAIClient } from "./llm/ollama.ts";
+import { startChat } from "./llm/chat.ts";
 
 const program = new Command();
 program
@@ -16,7 +17,7 @@ program
   .argument("<index>", "Index name")
   .action(async (loadpath: string, index: string) => {
     await createIndex(index);
-    const client = getOllamaOpenAIClient()
+    const client = getOllamaOpenAIClient();
     await ingestionPipeline(client, loadpath);
     console.log("Documents loaded successfully");
   });
@@ -26,7 +27,7 @@ program
   .argument("<index>", "Index name")
   .argument("<query>", "Query to search for")
   .action(async (index: string, query: string) => {
-    const client = getOllamaOpenAIClient()
+    const client = getOllamaOpenAIClient();
     const embedding = await getQueryEmbedding(client, query);
     const results = await search(index, embedding, 5) as any as {
       documents: {
@@ -39,13 +40,13 @@ program
         }
       }[];
     };
-  
+
     if (Array.isArray(results?.documents)) {
       results.documents
         .sort((a, b) => a.value.score - b.value.score)
         .forEach((doc) => {
-          const metadata = JSON.parse(doc.value.metadata)
-          console.log(metadata.titleHierarchy.join(' > '))
+          const metadata = JSON.parse(doc.value.metadata);
+          console.log(metadata.titleHierarchy.join(" > "));
         });
     }
   });
@@ -57,19 +58,15 @@ program
   .option("-m, --model <string>", "Model", process.env.GPT_4O_MINI!)
   .action(async (prompt: string, { model }) => {
     const client = getOllamaOpenAIClient();
-    const responseMessage = await getCompletion(
-      client,
-      model,
-      [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ]
-    );
+    const responseMessage = await getCompletion(client, model, [
+      {
+        role: "user",
+        content: prompt,
+      },
+    ]);
 
     for await (const msg of responseMessage) {
-      process.stdout.write(msg.choices[0].delta.content ?? '')
+      process.stdout.write(msg.choices[0].delta.content ?? "");
     }
   });
 
@@ -82,5 +79,11 @@ program
   .option("--api, --api <string>", "Api", "azure")
   .option("--model, --model <string>", "Model", process.env.GPT_4O_MINI!)
   .action(ragUse);
+
+program
+  .command("chat")
+  .description("Start chat with llm model")
+  .option("--model, --model <string>", "Model", process.env.GPT_4O_MINI!)
+  .action(startChat);
 
 program.parse();
