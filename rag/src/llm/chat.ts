@@ -12,7 +12,7 @@ const rl = readline.createInterface({
 function printCommands() {
   console.log("=========================================");
   console.log("");
-  console.log("CHAT COMMANDS 💬 ---------------------------");
+  console.log("CHAT COMMANDS 💬 -----------------------------");
   console.log("s - start chat");
   console.log("l - list chats");
   console.log("o - open chat");
@@ -24,8 +24,7 @@ function printCommands() {
   console.log("lai - list assistants with detailed info");
   console.log("");
 
-  console.log("OTHER COMMANDS 🫧 ---------------------------");
-  console.log("i - show info");
+  console.log("OTHER COMMANDS 🫧 -----------------------------");
   console.log("c - list commands");
   console.log("q - quit");
   console.log("");
@@ -97,11 +96,6 @@ async function command() {
         break;
 
       // Other commands -----------------------------------------------------------------------------------
-
-      case "i": // show info
-        console.log("No info for you my friend");
-        command();
-        break;
 
       case "lc": // list commands
         printCommands();
