@@ -1,49 +1,77 @@
 import type OpenAI from "openai";
-import type { AssistantTool } from "openai/resources/beta/assistants.mjs";
 import { EventEmitter } from "events";
-import { getPokemonTool } from "./openai/assistantTools.ts";
+import { getPokemonTool } from "./assistantTools.ts";
+import { getAzureOpenAIClient } from "../azure.ts";
+const openai = getAzureOpenAIClient();
 
-export const startAssistant = async (
-  instructions: string,
-  prompt: string,
-  openai: OpenAI,
-  model: string
-) => {
-  const tools: AssistantTool[] = [getPokemonTool.description as AssistantTool];
+type Events =
+  | "openai_event"
+  | "user_message_input"
+  | "assistant_message_created"
+  | "assistant_message_delta"
+  | "function_call"
+  | "function_response"
+  | "error";
 
-  const assistant = await openai.beta.assistants.create({
-    name: "CurreChat",
-    instructions,
-    model,
-    tools,
-  });
+export default class ChatRunner {
+  private events: { [key: string]: Function[] };
+  assistantId: string;
+  threadId: string;
 
-  const thread = await openai.beta.threads.create();
-  const message = await openai.beta.threads.messages.create(thread.id, {
-    role: "user",
-    content: prompt,
-  });
-
-  const eventHandler = new EventHandler(openai);
-  eventHandler.on("event", eventHandler.onEvent.bind(eventHandler));
-
-  const stream = openai.beta.threads.runs.stream(
-    thread.id,
-    { assistant_id: assistant.id },
-    eventHandler as any
-  );
-
-  for await (const event of stream) {
-    eventHandler.emit("event", event);
+  constructor(assistantId: string, threadId: string) {
+    this.events = {};
+    this.assistantId = assistantId;
+    this.threadId = threadId;
   }
-};
+
+  on(event: Events, callback: Function) {
+    if (!this.events[event]) {
+      this.events[event] = [];
+    }
+    this.events[event].push(callback);
+
+    return this; // Return the instance for function chaining
+  }
+
+  private emit(event: Events, data?: any) {
+    if (this.events[event]) {
+      this.events[event].forEach((callback) => callback(data));
+    }
+  }
+
+  async start() {
+    if (!this.threadId) {
+      this.emit("error", { error: "Missing threadId" });
+      return false;
+    }
+
+    this.emit("user_message_input");
+
+    const eventHandler = new EventHandler(openai);
+    eventHandler.on("openai_event", eventHandler.onEvent.bind(eventHandler));
+
+    const stream = openai.beta.threads.runs.stream(
+      this.threadId,
+      { assistant_id: this.assistantId },
+      eventHandler as any
+    );
+
+    for await (const event of stream) {
+      eventHandler.emit("openai_event", event);
+    }
+  }
+
+  async addMessage(message: string) {
+    console.log("Adding message:", message);
+  }
+}
 
 class EventHandler extends EventEmitter {
   private openai: OpenAI;
 
   constructor(openai: OpenAI) {
     super();
-    this.openai = openai;
+    openai = openai;
   }
 
   async onEvent(event) {
@@ -107,13 +135,13 @@ class EventHandler extends EventEmitter {
 
   async submitToolOutputs(toolOutputs, runId: string, threadId: string) {
     try {
-      const stream = this.openai.beta.threads.runs.submitToolOutputsStream(
+      const stream = openai.beta.threads.runs.submitToolOutputsStream(
         threadId,
         runId,
         { tool_outputs: toolOutputs }
       );
       for await (const event of stream) {
-        this.emit("event", event);
+        this.emit("openai_event", event);
       }
     } catch (error) {
       console.error("Error submitting tool outputs:", error);
