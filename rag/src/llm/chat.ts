@@ -5,6 +5,7 @@ import {
   formatAssistantSimple,
 } from "./openai/util/formatAssistantDetails.ts";
 import readline from "readline";
+import chalk from "chalk";
 
 const oapi = new OpenAIService();
 
@@ -41,7 +42,7 @@ function printCommands() {
 const tempDefaultAssistant = "asst_FmeryOpYmAbgfUsRP7La9i86";
 
 async function command() {
-  rl.question("Command: ", (answer) => {
+  rl.question(chalk.greenBright.bold("Command: "), (answer) => {
     console.log("");
 
     switch (answer) {
@@ -173,18 +174,21 @@ const startChatRun = (assistantId: string, threadId: string) => {
 
   chatrun
     .on("user_message_required", (respond) => {
-      rl.question("You (:q stops chat) >> ", async (input: string) => {
-        if (input === ":q") {
-          chatrun.stop();
-          return;
-        }
+      rl.question(
+        chalk.magentaBright.bold("You (:q stops chat) >> "),
+        async (input: string) => {
+          if (input === ":q") {
+            chatrun.stop();
+            return;
+          }
 
-        console.log("\n");
-        respond(input);
-      });
+          console.log("\n");
+          respond(input);
+        }
+      );
     })
     .on("assistant_message_created", () => {
-      process.stdout.write("Assistant 👾 >> ");
+      process.stdout.write(chalk.cyan.bold("Assistant 👾 >> "));
     })
     .on("assistant_message_delta", (text: string) => {
       process.stdout.write(text);
