@@ -219,5 +219,7 @@ export default class OpenAIService {
     }
   };
 
-  ChatRunner = ChatRunner;
+  createChatRunner(assistantId: string, threadId: string): ChatRunner {
+    return new ChatRunner(this, assistantId, threadId);
+  }
 }

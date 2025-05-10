@@ -164,36 +164,54 @@ async function command() {
 }
 
 const startChatRun = (assistantId: string, threadId: string) => {
-  const chatrun = new oapi.ChatRunner(assistantId, threadId);
+  const chatrun = oapi.createChatRunner(assistantId, threadId);
 
   chatrun
-    .on("user_message_input", () => {
-      rl.question("Message (:q stops chat): ", async (input: string) => {
+    .on("user_message_required", (respond) => {
+      rl.question("You (:q stops chat) >> ", async (input: string) => {
         if (input === ":q") {
-          console.log("Chat stopped 💬❎");
-          console.log("");
-          command();
+          chatrun.stop();
           return;
-        } else {
-          console.log("Message received");
-          // chatrun.addMessage(input);
         }
+
+        console.log("\n");
+        respond(input);
       });
     })
-    .on("assistant_message_created", (message: string) => {
-      console.log("Assistant message created:", message);
+    .on("assistant_message_created", () => {
+      process.stdout.write("Assistant 👾 >> ");
     })
-    .on("assistant_message_delta", (message: string) => {
-      console.log("Assistant message delta:", message);
+    .on("assistant_message_delta", (text: string) => {
+      process.stdout.write(text);
     })
-    .on("function_call", (functionCall) => {
-      console.log("Function call:", functionCall);
+    .on("assistant_message_end", () => {
+      console.log("\n");
+      console.log("");
     })
-    .on("function_response", (functionResponse) => {
-      console.log("Function response:", functionResponse);
+    .on("tool_call_created", () => {
+      console.log("");
+      console.log("Tool called");
+      console.log("");
+    })
+    .on("tool_call_delta", () => {
+      console.log("");
+      console.log("Tool delta");
+      console.log("");
+    })
+    .on("tool_call_done", () => {
+      console.log("");
+      console.log("Tool done");
+      console.log("");
+    })
+    .on("chat_end", () => {
+      console.log("");
+      console.log("Chat ended 💬❎");
+      console.log("");
+      command();
     })
     .on("error", (error) => {
       console.error("Error:", error);
+      console.log("");
     });
 
   chatrun.start();
