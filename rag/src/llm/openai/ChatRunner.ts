@@ -66,10 +66,9 @@ export default class ChatRunner {
   }
 
   async run() {
-    openai.beta.threads.runs
-      .stream(this.threadId, {
-        assistant_id: this.assistantId,
-      })
+    const stream = this.oapi.createStream(this.threadId, this.assistantId);
+
+    stream
       .on("textCreated", (text) => this._emit("assistant_message_created"))
       .on("textDelta", (textDelta, snapshot) =>
         this._emit("assistant_message_delta", textDelta.value)

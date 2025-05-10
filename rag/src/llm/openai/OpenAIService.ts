@@ -174,7 +174,7 @@ export default class OpenAIService {
     }
   };
 
-  createRun = (threadId: string, assistantId: string): AssistantStream => {
+  createStream = (threadId: string, assistantId: string): AssistantStream => {
     try {
       return openai.beta.threads.runs.stream(threadId, {
         assistant_id: assistantId,
@@ -184,7 +184,7 @@ export default class OpenAIService {
     }
   };
 
-  cancelRun = async (threadId: string, runId: string): Promise<Run> => {
+  cancelStream = async (threadId: string, runId: string): Promise<Run> => {
     try {
       return await openai.beta.threads.runs.cancel(threadId, runId);
     } catch (err) {
