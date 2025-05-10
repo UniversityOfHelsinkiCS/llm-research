@@ -14,7 +14,7 @@ type Events =
   | "assistant_message_end"
   | "tool_call_created"
   | "tool_call_delta"
-  | "tool_call_done"
+  | "tool_call_end"
   | "chat_end"
   | "error";
 
@@ -47,13 +47,13 @@ export default class ChatRunner {
   }
 
   async start() {
-    const message = await this.waitForUserMessage();
+    const message = await this._waitForUserMessage();
     await this.oapi.addMessageToThread(this.threadId, message);
 
     this.run();
   }
 
-  waitForUserMessage(): Promise<string> {
+  private _waitForUserMessage(): Promise<string> {
     return new Promise((resolve) => {
       this._emit("user_message_required", (input: string) => {
         resolve(input);
@@ -85,7 +85,7 @@ export default class ChatRunner {
         this._emit("tool_call_delta", toolCallDelta);
       })
       .on("toolCallDone", (toolCallEnd) =>
-        this._emit("tool_call_done", toolCallEnd)
+        this._emit("tool_call_end", toolCallEnd)
       );
   }
 }

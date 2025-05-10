@@ -60,31 +60,36 @@ async function command() {
       case "l": // list all chats
         console.log("List of chats not implemented yet");
         console.log("");
+        command();
         break;
 
       case "o": // open old chat
-        rl.question("Thread ID: ", async (threadId) => {
-          const { messages } = await oapi.getChat(threadId);
+        console.log("Open old chat not implemented yet");
+        console.log("");
+        command();
+        // rl.question("Thread ID: ", async (threadId) => {
+        //   const { messages } = await oapi.getChat(threadId);
 
-          if (messages) {
-            messages.forEach((message) => {
-              const role = message.role === "user" ? "User" : "Assistant";
-              console.log(`${role}: ${message.content}`);
-            });
-            console.log("");
+        //   if (messages) {
+        //     messages.forEach((message) => {
+        //       const role = message.role === "user" ? "User" : "Assistant";
+        //       console.log(`${role}: ${message.content}`);
+        //     });
+        //     console.log("");
 
-            startChatRun(tempDefaultAssistant, threadId);
-          } else {
-            console.log("Chat not found");
-            console.log("");
-          }
-          command();
-        });
+        //     startChatRun(tempDefaultAssistant, threadId);
+        //   } else {
+        //     console.log("Chat not found");
+        //     console.log("");
+        //   }
+        //   command();
+        // });
         break;
 
       case "d": // delete a chat
         console.log("Delete chat not implemented yet");
         console.log("");
+        command();
         break;
 
       // OpenAI commands  -----------------------------------------------------------------------------------
@@ -190,17 +195,14 @@ const startChatRun = (assistantId: string, threadId: string) => {
     })
     .on("tool_call_created", () => {
       console.log("");
-      console.log("Tool called");
+      console.log("Tool called >>");
       console.log("");
     })
-    .on("tool_call_delta", () => {
-      console.log("");
-      console.log("Tool delta");
-      console.log("");
+    .on("tool_call_delta", (text: string) => {
+      process.stdout.write(text);
     })
-    .on("tool_call_done", () => {
-      console.log("");
-      console.log("Tool done");
+    .on("tool_call_end", () => {
+      console.log("\n");
       console.log("");
     })
     .on("chat_end", () => {
