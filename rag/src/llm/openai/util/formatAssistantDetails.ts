@@ -1,5 +1,12 @@
 import type { Assistant } from "openai/resources/beta/assistants.mjs";
 
+export function formatAssistantSimple(data: Assistant): string {
+  const { id, name, model, created_at } = data;
+  return `ID: ${id}\nName: ${name}\nModel: ${model}\nCreated At: ${new Date(
+    created_at * 1000
+  ).toLocaleString()}`;
+}
+
 export function formatAssistantDetails(data: Assistant): string {
   const {
     id,

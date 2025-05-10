@@ -1,6 +1,9 @@
 import type { Assistant } from "openai/resources/beta/assistants";
 import OpenAIService, { type AssistantData } from "./openai/OpenAIService.ts";
-import { formatAssistantDetails } from "./openai/util/formatAssistantDetails.ts";
+import {
+  formatAssistantDetails,
+  formatAssistantSimple,
+} from "./openai/util/formatAssistantDetails.ts";
 import readline from "readline";
 
 const oapi = new OpenAIService();
@@ -88,16 +91,10 @@ async function command() {
 
       case "la": // list assistants
         (async () => {
-          const assistants = await oapi.getAssistants(20);
+          const assistants = await oapi.getAssistants(10);
           console.log("Assistants:");
           assistants.forEach((assistant: Assistant) => {
-            console.log(`Assistant ID: ${assistant.id}`);
-            console.log(`Name: ${assistant.name}`);
-            console.log(
-              `Created At: ${new Date(
-                assistant.created_at * 1000
-              ).toLocaleString()}`
-            );
+            console.log(formatAssistantSimple(assistant));
             console.log("");
           });
           command();
@@ -132,12 +129,10 @@ async function command() {
 
       // case "ca": // create assistant
       //   async () => {
-      //     const data: AssistantData = {
-      //       name: "Pokemon Master",
-      //       instructions: "Answer questions about Pokemon",
-      //     };
+      //     const name = "Pokemon Master";
+      //     const instructions = "Answer questions about Pokemon";
 
-      //     const assistant = await oapi.createAssistant(data);
+      //     const assistant = await oapi.createAssistant(name, instructions);
       //     if (assistant) {
       //       console.log("Assistant created:");
       //       console.log(formatAssistantDetails(assistant));

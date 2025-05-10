@@ -1,12 +1,21 @@
 import fs from "fs";
-import type { Thread } from "openai/resources/beta/threads/threads";
+import { getPokemonTool } from "./assistantTools.ts";
+import { getAzureOpenAIClient } from "../azure.ts";
+import ChatRunner from "./ChatRunner.ts";
+
 import type {
   Assistant,
   AssistantTool,
 } from "openai/resources/beta/assistants.mjs";
-import { getPokemonTool } from "./assistantTools.ts";
-import { getAzureOpenAIClient } from "../azure.ts";
-import ChatRunner from "./ChatRunner.ts";
+import type { Thread } from "openai/resources/beta/threads/threads";
+import type {
+  Message,
+  MessageContent,
+} from "openai/resources/beta/threads/messages.mjs";
+import type { CursorPage } from "openai/pagination.mjs";
+import type { Run } from "openai/resources/beta/threads/runs/runs.mjs";
+import type { AssistantStream } from "openai/lib/AssistantStream.mjs";
+
 const openai = getAzureOpenAIClient();
 
 export interface ChatData {
@@ -28,11 +37,12 @@ export default class OpenAIService {
     this.chat_file = "./src/llm/openai/data/chats.json";
   }
 
-  /**
-   * Creates a new chat for a given assistant and starts a conversation.
-   * @param assistantId - The ID of the assistant to create a chat for
-   */
-  createChat = async (assistantId: string) => {
+  createChat = async (
+    assistantId: string
+  ): Promise<{
+    threadId: string;
+    assistantId: string;
+  }> => {
     let thread: Thread | null = null;
 
     try {
@@ -54,34 +64,41 @@ export default class OpenAIService {
       if (thread) await openai.beta.threads.del(thread.id);
 
       console.error("Error creating chat:", err);
-      return null;
     }
   };
 
-  /**
-   * Retrieves messages from a specific chat thread.
-   * @param threadId - The ID of the thread to retrieve
-   * @returns - A promise that resolves to an object containing the thread ID and messages
-   */
-  getChat = async (threadId: string) => {
+  getChat = async (
+    threadId: string
+  ): Promise<{
+    threadId: string;
+    messages: {
+      id: string;
+      role: string;
+      content: MessageContent[];
+      created_at: string;
+    }[];
+  }> => {
     try {
       const thread = await openai.beta.threads.retrieve(threadId);
-      const messages = await openai.beta.threads.messages.list(threadId, {
-        order: "asc",
+      const messagesRaw: CursorPage<Message> = await this.getMessagesFromThread(
+        threadId
+      );
+
+      const messages = messagesRaw.data.map((message) => {
+        return {
+          id: message.id,
+          role: message.role,
+          content: message.content,
+          created_at: new Date(message.created_at * 1000).toLocaleString(),
+        };
       });
 
-      return { threadId: thread.id, messages: messages.data };
+      return { threadId: thread.id, messages };
     } catch (err) {
       console.error("Error fetching chat:", err);
-      return null;
     }
   };
 
-  /**
-   * Retrieves a list of assistants from Azure OpenAI.
-   * @param limit - The number of assistants to retrieve
-   * @returns - A promise that resolves to an array of Assistant objects
-   */
   getAssistants = async (limit: number): Promise<Assistant[]> => {
     try {
       const assistants = await openai.beta.assistants.list({
@@ -95,30 +112,19 @@ export default class OpenAIService {
     }
   };
 
-  /**
-   * Retrieves detailed information about a specific assistant.
-   * @param assistantId - The ID of the assistant to retrieve
-   * @returns - A promise that resolves to an Assistant object or null if not found
-   */
-  getAssistant = async (assistantId: string): Promise<Assistant | null> => {
+  getAssistant = async (assistantId: string): Promise<Assistant> => {
     try {
       return await openai.beta.assistants.retrieve(assistantId);
     } catch (err) {
       console.error("Error fetching assistant:", err);
-      return null;
     }
   };
 
-  /**
-   * Creates a new assistant with the specified data.
-   * @param assistantData - The data for the new assistant
-   * @returns - A promise that resolves to the created Assistant object or null if failed
-   */
   createAssistant = async (
     name: string,
     instructions: string,
     model: string = process.env.GPT_4O_MINI
-  ): Promise<Assistant | null> => {
+  ): Promise<Assistant> => {
     try {
       return await openai.beta.assistants.create({
         name,
@@ -128,11 +134,13 @@ export default class OpenAIService {
       });
     } catch (err) {
       console.error("Error creating assistant:", err);
-      return null;
     }
   };
 
-  addMessageToThread = async (threadId: string, content: string) => {
+  addMessageToThread = async (
+    threadId: string,
+    content: string
+  ): Promise<Message> => {
     try {
       return await openai.beta.threads.messages.create(threadId, {
         role: "user",
@@ -140,44 +148,54 @@ export default class OpenAIService {
       });
     } catch (err) {
       console.error("Error adding message to thread");
-      return null;
     }
   };
 
-  getMessagesFromThread = async (threadId: string) => {
+  getMessagesFromThread = async (
+    threadId: string
+  ): Promise<CursorPage<Message>> => {
     try {
-      const threadMessages = await openai.beta.threads.messages.list(threadId, {
+      return await openai.beta.threads.messages.list(threadId, {
         order: "asc",
       });
-
-      return threadMessages.data.map((message) => ({
-        id: message.id,
-        role: message.role,
-        content: message.content,
-        assistantId: message.assistant_id,
-      }));
     } catch (err) {
       console.error("Error fetching messages from thread");
-      return null;
     }
   };
 
-  createRun = (threadId: string, assistantId: string) => {
+  deleteMessageFromThread = async (
+    threadId: string,
+    messageId: string
+  ): Promise<void> => {
+    try {
+      await openai.beta.threads.messages.del(threadId, messageId);
+    } catch (err) {
+      console.error("Error deleting message from thread");
+    }
+  };
+
+  createRun = (threadId: string, assistantId: string): AssistantStream => {
     try {
       return openai.beta.threads.runs.stream(threadId, {
         assistant_id: assistantId,
       });
     } catch (err) {
-      console.error("Error creating run");
-      return null;
+      console.error("Error creating run:", err);
     }
   };
 
-  cancelRun = async (threadId: string, runId: string) => {
-    return await openai.beta.threads.runs.cancel(threadId, runId);
+  cancelRun = async (threadId: string, runId: string): Promise<Run> => {
+    try {
+      return await openai.beta.threads.runs.cancel(threadId, runId);
+    } catch (err) {
+      console.error("Error canceling run:", err);
+    }
   };
 
-  private _writeJsonFile = async (file: string, jsonData: ChatData) => {
+  private _writeJsonFile = async (
+    file: string,
+    jsonData: ChatData
+  ): Promise<void> => {
     try {
       let existingData = {};
 
