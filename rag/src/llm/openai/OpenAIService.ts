@@ -2,13 +2,23 @@ import { getAzureOpenAIClient } from "../azure.ts";
 import type OpenAI from "openai";
 import fs, { write } from "fs";
 import type { Thread } from "openai/resources/beta/threads/threads";
-import type { Assistant } from "openai/resources/beta/assistants.mjs";
+import type {
+  Assistant,
+  AssistantTool,
+} from "openai/resources/beta/assistants.mjs";
 
-interface ChatData {
+export interface ChatData {
   thread_id: string;
   assistant_id: string;
   assistant_name: string;
   created_at: string;
+}
+
+export interface AssistantData {
+  name: string;
+  instructions: string;
+  model: string;
+  tools: AssistantTool[];
 }
 
 export default class OpenAIService {
@@ -25,9 +35,11 @@ export default class OpenAIService {
    * @param assistantId - The ID of the assistant to create a chat for
    */
   createChat = async (assistantId: string) => {
+    let thread: Thread | null = null;
+
     try {
-      const thread = await this.openai.beta.threads.create();
       const assistant = await this.openai.beta.assistants.retrieve(assistantId);
+      thread = await this.openai.beta.threads.create();
 
       const chatData: ChatData = {
         thread_id: thread.id,
@@ -36,22 +48,20 @@ export default class OpenAIService {
         created_at: new Date().toISOString(),
       };
 
-      this.writeJsonFile(this.chat_file, chatData);
+      this._writeJsonFile(this.chat_file, chatData);
+
+      return { threadId: thread.id, assistantId: assistant.id };
     } catch (err) {
+      // delete thread if failed to create chat
+      if (thread) await this.openai.beta.threads.del(thread.id);
+
       console.error("Error creating chat:", err);
       return null;
     }
   };
 
   /**
-   * Starts a chat with a given assistant and thread ID.
-   * @param assistantId - The ID of the assistant to start a chat with
-   * @param threadId - The ID of the thread to start a chat in
-   */
-  startChat = async (assistantId: string, threadId: string) => {};
-
-  /**
-   * This method retrieves a list of assistants from Azure OpenAI.
+   * Retrieves a list of assistants from Azure OpenAI.
    * @param limit - The number of assistants to retrieve
    * @returns - A promise that resolves to an array of Assistant objects
    */
@@ -65,6 +75,36 @@ export default class OpenAIService {
     } catch (err) {
       console.error("Error fetching assistants:", err);
       return [];
+    }
+  };
+
+  /**
+   * Retrieves detailed information about a specific assistant.
+   * @param assistantId - The ID of the assistant to retrieve
+   * @returns - A promise that resolves to an Assistant object or null if not found
+   */
+  getAssistant = async (assistantId: string): Promise<Assistant | null> => {
+    try {
+      return await this.openai.beta.assistants.retrieve(assistantId);
+    } catch (err) {
+      console.error("Error fetching assistant:", err);
+      return null;
+    }
+  };
+
+  createAssistant = async (
+    assistantData: AssistantData
+  ): Promise<Assistant | null> => {
+    try {
+      return await this.openai.beta.assistants.create({
+        name: assistantData.name,
+        instructions: assistantData.instructions,
+        model: assistantData.model,
+        tools: assistantData.tools,
+      });
+    } catch (err) {
+      console.error("Error creating assistant:", err);
+      return null;
     }
   };
 
@@ -114,7 +154,7 @@ export default class OpenAIService {
     return await this.openai.beta.threads.runs.cancel(threadId, runId);
   };
 
-  writeJsonFile = async (file: string, jsonData: ChatData) => {
+  private _writeJsonFile = async (file: string, jsonData: ChatData) => {
     try {
       let existingData = {};
 
