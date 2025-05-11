@@ -49,14 +49,15 @@ export default class OpenAIService {
       const assistant = await openai.beta.assistants.retrieve(assistantId);
       thread = await openai.beta.threads.create();
 
-      const chatData: ChatData = {
-        thread_id: thread.id,
-        assistant_id: assistant.id,
-        assistant_name: assistant.name,
-        created_at: new Date().toISOString(),
-      };
+      // BEN: IMPLEMENT AFTER FUNCTION CALLING WORKS
+      // const chatData: ChatData = {
+      //   thread_id: thread.id,
+      //   assistant_id: assistant.id,
+      //   assistant_name: assistant.name,
+      //   created_at: new Date().toISOString(),
+      // };
 
-      this._writeJsonFile(this.chat_file, chatData);
+      // this._writeJsonFile(this.chat_file, chatData);
 
       return { threadId: thread.id, assistantId: assistant.id };
     } catch (err) {

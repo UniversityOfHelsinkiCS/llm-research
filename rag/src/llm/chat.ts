@@ -17,14 +17,14 @@ const rl = readline.createInterface({
 function printCommands() {
   console.log("=========================================");
   console.log("");
-  console.log("CHAT COMMANDS 💬 -----------------------------");
+  console.log(chalk.bold("CHAT COMMANDS 💬 -----------------------------"));
   console.log("s - start new chat");
   console.log("l - list all chats");
   console.log("o - open old chat");
   console.log("d - delete a chat");
   console.log("");
 
-  console.log("OPENAI COMMANDS 👾 ---------------------------");
+  console.log(chalk.bold("OPENAI COMMANDS 👾 ---------------------------"));
   console.log("la - list assistants");
   console.log("lai - list assistants with detailed info");
   console.log("ga - get assistant details by assistant ID");
@@ -32,14 +32,14 @@ function printCommands() {
   // console.log("da - delete assistant");
   console.log("");
 
-  console.log("OTHER COMMANDS 🫧 -----------------------------");
+  console.log(chalk.bold("OTHER COMMANDS 🫧 -----------------------------"));
   console.log("help - list commands");
   console.log("q - quit");
   console.log("");
 }
 
 // TODO: create a cli to choose the assistant from a list
-const tempDefaultAssistant = "asst_FmeryOpYmAbgfUsRP7La9i86";
+const defaultAssistant = "asst_FmeryOpYmAbgfUsRP7La9i86"; // pokemon master
 
 async function command() {
   rl.question(chalk.greenBright.bold("Command: "), (answer) => {
@@ -51,7 +51,7 @@ async function command() {
       case "s": // start new chat
         (async () => {
           const { assistantId, threadId } = await oapi.createChat(
-            tempDefaultAssistant
+            defaultAssistant
           );
 
           startChatRun(assistantId, threadId);
