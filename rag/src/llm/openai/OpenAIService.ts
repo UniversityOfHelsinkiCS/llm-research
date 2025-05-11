@@ -15,6 +15,7 @@ import type {
 import type { CursorPage } from "openai/pagination.mjs";
 import type { Run } from "openai/resources/beta/threads/runs/runs.mjs";
 import type { AssistantStream } from "openai/lib/AssistantStream.mjs";
+import type { RunSubmitToolOutputsParamsStreaming } from "openai/resources/beta/threads/runs/runs.mjs";
 
 const openai = getAzureOpenAIClient();
 
@@ -188,6 +189,22 @@ export default class OpenAIService {
   cancelStream = async (threadId: string, runId: string): Promise<Run> => {
     try {
       return await openai.beta.threads.runs.cancel(threadId, runId);
+    } catch (err) {
+      console.error("Error canceling run:", err);
+    }
+  };
+
+  submitToolOutputsStream = (
+    threadId: string,
+    runId: string,
+    toolOutputs: RunSubmitToolOutputsParamsStreaming
+  ): AssistantStream => {
+    try {
+      return openai.beta.threads.runs.submitToolOutputsStream(
+        threadId,
+        runId,
+        toolOutputs
+      );
     } catch (err) {
       console.error("Error canceling run:", err);
     }
