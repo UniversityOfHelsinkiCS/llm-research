@@ -199,14 +199,7 @@ const startChatRun = (assistantId: string, threadId: string) => {
     })
     .on("tool_call_created", () => {
       console.log("");
-      console.log("Tool called >>");
-      console.log("");
-    })
-    .on("tool_call_delta", (text: string) => {
-      process.stdout.write(text);
-    })
-    .on("tool_call_end", () => {
-      console.log("\n");
+      console.log(chalk.yellow.bold("🔮🔭 Tool called ⚗️⚖️"));
       console.log("");
     })
     .on("chat_end", () => {

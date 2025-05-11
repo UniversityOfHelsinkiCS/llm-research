@@ -3,18 +3,20 @@ import { EventEmitter } from "events";
 import { getPokemonTool } from "./assistantTools.ts";
 import { getAzureOpenAIClient } from "../azure.ts";
 import OpenAIService from "./OpenAIService.ts";
+import type {
+  RequiredActionFunctionToolCall,
+  Run,
+} from "openai/resources/beta/threads/runs/runs.mjs";
+import { AssistantStream } from "openai/lib/AssistantStream.mjs";
 
 const openai = getAzureOpenAIClient();
 
 type Events =
-  | "openai_event"
   | "user_message_required"
   | "assistant_message_created"
   | "assistant_message_delta"
   | "assistant_message_end"
   | "tool_call_created"
-  | "tool_call_delta"
-  | "tool_call_end"
   | "chat_end"
   | "error";
 
@@ -50,7 +52,8 @@ export default class ChatRunner {
     const message = await this._waitForUserMessage();
     await this.oapi.addMessageToThread(this.threadId, message);
 
-    this.run();
+    const stream = this.oapi.createStream(this.threadId, this.assistantId);
+    this._run(stream);
   }
 
   private _waitForUserMessage(): Promise<string> {
@@ -65,27 +68,96 @@ export default class ChatRunner {
     this._emit("chat_end");
   }
 
-  async run() {
-    const stream = this.oapi.createStream(this.threadId, this.assistantId);
+  private async _run(stream: AssistantStream) {
+    for await (const event of stream) {
+      // console.log("Event type:", event.event); // use this to check event types
 
-    stream
-      .on("textCreated", (text) => this._emit("assistant_message_created"))
-      .on("textDelta", (textDelta, snapshot) =>
-        this._emit("assistant_message_delta", textDelta.value)
-      )
-      .on("messageDone", () => {
-        this._emit("assistant_message_end");
-        this.start(); // start again
-      })
-      .on("toolCallCreated", (toolCall) =>
-        this._emit("tool_call_created", toolCall)
-      )
-      .on("toolCallDelta", (toolCallDelta, snapshot) => {
-        this._emit("tool_call_delta", toolCallDelta);
-      })
-      .on("toolCallDone", (toolCallEnd) =>
-        this._emit("tool_call_end", toolCallEnd)
+      try {
+        switch (event.event) {
+          case "thread.message.created":
+            this._emit("assistant_message_created");
+            break;
+
+          case "thread.message.delta":
+            if ("text" in event.data.delta.content[0]) {
+              this._emit(
+                "assistant_message_delta",
+                event.data.delta.content[0].text.value
+              );
+            }
+            break;
+
+          case "thread.message.completed":
+            this._emit("assistant_message_end");
+            this.start(); // start again
+            break;
+
+          case "thread.run.requires_action":
+            this._emit("tool_call_created");
+            await this.handleRequiresAction(
+              event.data,
+              event.data.id,
+              event.data.thread_id
+            );
+            break;
+        }
+      } catch (error) {
+        console.error("Error handling event:", error);
+      }
+    }
+  }
+
+  async handleRequiresAction(data: Run, runId: string, threadId: string) {
+    try {
+      const toolOutputs = await Promise.all(
+        data.required_action.submit_tool_outputs.tool_calls.map(
+          async (toolCall: RequiredActionFunctionToolCall) => {
+            switch (toolCall.function.name) {
+              case "getPokemon":
+                const argument = JSON.parse(
+                  toolCall.function.arguments
+                ).pokemon_name;
+                let answer = "";
+                try {
+                  answer = await getPokemonTool.function(argument);
+                } catch (error) {
+                  console.error("Error calling getPokemon:", argument);
+                }
+                return {
+                  tool_call_id: toolCall.id,
+                  output: answer,
+                };
+
+              default:
+                console.error("Unknown tool call:", toolCall.function.name);
+                return {
+                  tool_call_id: toolCall.id,
+                  output: null, // or some default value
+                };
+            }
+          }
+        )
       );
+
+      // Submit all the tool outputs at the same time
+      await this.submitToolOutputs(toolOutputs, runId, threadId);
+    } catch (error) {
+      console.error("Error processing required action:", error);
+    }
+  }
+
+  async submitToolOutputs(toolOutputs: any, runId: string, threadId: string) {
+    try {
+      const stream = openai.beta.threads.runs.submitToolOutputsStream(
+        threadId,
+        runId,
+        { tool_outputs: toolOutputs }
+      );
+
+      this._run(stream);
+    } catch (error) {
+      console.error("Error submitting tool outputs:", error);
+    }
   }
 }
 
