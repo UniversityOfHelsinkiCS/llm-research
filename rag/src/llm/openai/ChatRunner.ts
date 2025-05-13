@@ -1,4 +1,5 @@
 import { getPokemonTool } from "./assistantTools.ts";
+import { emptyTmp, writeSteam } from "./util/writeStream.ts";
 import OpenAIService from "./OpenAIService.ts";
 import type {
   RequiredActionFunctionToolCall,
@@ -66,7 +67,7 @@ export default class ChatRunner {
 
   private async _run(stream: AssistantStream) {
     for await (const event of stream) {
-      // console.log("Event type:", event.event); // use this to check event types
+      writeSteam(event.event, "event"); // in new terminal: tail -f src/llm/openai/tmp/event.log
 
       try {
         switch (event.event) {
@@ -95,6 +96,10 @@ export default class ChatRunner {
               event.data.id,
               event.data.thread_id
             );
+            break;
+
+          case "thread.run.completed":
+            emptyTmp(); // empty the tmp files
             break;
         }
       } catch (error) {
