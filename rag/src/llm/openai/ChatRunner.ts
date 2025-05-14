@@ -1,5 +1,5 @@
 import { getPokemonTool } from "./assistantTools.ts";
-import { emptyTmp, writeSteam } from "./util/writeStream.ts";
+import { emptyTmp, logEvent, logRagOutput } from "./util/writeStream.ts";
 import OpenAIService from "./OpenAIService.ts";
 import type {
   RequiredActionFunctionToolCall,
@@ -67,7 +67,7 @@ export default class ChatRunner {
 
   private async _run(stream: AssistantStream) {
     for await (const event of stream) {
-      writeSteam(event.event, "event"); // in new terminal: tail -f src/llm/openai/tmp/event.log
+      logEvent(event); // in new terminal: tail -f src/llm/openai/tmp/event.log
 
       try {
         switch (event.event) {
@@ -102,7 +102,9 @@ export default class ChatRunner {
             this._emit("error", event.data.last_error);
 
           case "thread.run.completed":
-            emptyTmp(); // empty the tmp files
+            process.nextTick(() => {
+              emptyTmp(); // empty the tmp files
+            });
             break;
         }
       } catch (error) {
@@ -140,6 +142,8 @@ export default class ChatRunner {
           }
         )
       );
+
+      logRagOutput(toolOutputs); // in new terminal: tail -f src/llm/openai/tmp/rag_output.log
 
       // Submit all the tool outputs at the same time
       await this.submitToolOutputs(runId, threadId, toolOutputs);

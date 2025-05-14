@@ -1,34 +1,32 @@
 import { Console } from "console";
 import fs from "fs";
+import type { AssistantStreamEvent } from "openai/resources/beta/assistants.mjs";
+import type { RunSubmitToolOutputsParamsStreaming } from "openai/resources/beta/threads/runs/runs.mjs";
 
-/**
- * Logs a custom message to a specified file.
- *
- * @param message The message to log to the file.
- * @param filePath The path to the log file (e.g., /tmp/data).
- */
-export function writeSteam(
-  message: string,
-  type: "event" | "rag_output"
-): void {
-  let filePath = "";
+const eventFilePath = "src/llm/openai/tmp/event.log";
+const ragOutputFilePath = "src/llm/openai/tmp/rag_output.log";
 
-  if (type === "event") {
-    filePath = "src/llm/openai/tmp/event.log";
-  } else if (type === "rag_output") {
-    filePath = "src/llm/openai/tmp/rag_output.log";
-  }
-
+export function writeSteam(message: string, filePath: string): void {
   const output = fs.createWriteStream(filePath, { flags: "a" }); // 'a' = append mode
   const fileConsole = new Console(output, output);
+  fileConsole.log(message);
+}
 
-  fileConsole.log(message); // Write custom message to file
+export function logEvent(event: AssistantStreamEvent): void {
+  writeSteam(event.event, eventFilePath);
+}
+
+export function logRagOutput(
+  toolOutputs: RunSubmitToolOutputsParamsStreaming["tool_outputs"]
+): void {
+  const message = toolOutputs.map((toolOutput) => {
+    return JSON.parse(toolOutput.output);
+  });
+
+  writeSteam(JSON.stringify(message, null, 2), ragOutputFilePath);
 }
 
 export function emptyTmp(): void {
-  const eventFilePath = "src/llm/openai/tmp/event.log";
-  const ragOutputFilePath = "src/llm/openai/tmp/rag_output.log";
-
   fs.writeFile(eventFilePath, "", (err) => {
     if (err) throw err;
   });
