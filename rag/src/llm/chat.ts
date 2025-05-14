@@ -29,7 +29,7 @@ function printCommands() {
   console.log("la - list assistants");
   console.log("lai - list assistants with detailed info");
   console.log("ga - get assistant details by assistant ID");
-  console.log("ca - create assistant");
+  // console.log("ca - create assistant");
   // console.log("da - delete assistant");
   console.log("");
 
@@ -51,8 +51,13 @@ async function command() {
 
       case "s": // start new chat
         (async () => {
+          const assistants: Assistant[] = await oapi.getAssistants(100);
+          const assistant = assistants.find(
+            (assistant: Assistant) => assistant.name === "Pokemon master"
+          );
+
           const { assistantId, threadId } = await oapi.createChat(
-            defaultAssistant
+            assistant.id
           );
 
           startChatRun(assistantId, threadId);
@@ -134,22 +139,22 @@ async function command() {
         });
         break;
 
-      case "ca": // create assistant
-        async () => {
-          const { name, instructions } = assistants[0];
+      // case "ca": // create assistant
+      //   (async () => {
+      //     const { name, instructions } = assistants[0];
 
-          const assistant = await oapi.createAssistant(name, instructions);
-          if (assistant) {
-            console.log("Assistant created:");
-            console.log(formatAssistantDetails(assistant));
-            console.log("");
-          } else {
-            console.log("Failed to create assistant");
-            console.log("");
-          }
-          command();
-        };
-        break;
+      //     const assistant = await oapi.createAssistant(name, instructions);
+      //     if (assistant) {
+      //       console.log("Assistant created:");
+      //       console.log(formatAssistantDetails(assistant));
+      //       console.log("");
+      //     } else {
+      //       console.log("Failed to create assistant");
+      //       console.log("");
+      //     }
+      //     command();
+      //   })();
+      //   break;
 
       // Other commands -----------------------------------------------------------------------------------
 
@@ -212,6 +217,7 @@ const startChatRun = (assistantId: string, threadId: string) => {
       console.log("Error code:", error.code);
       console.log("Error message:", error.message);
       console.log("");
+      command();
     });
 
   chatrun.start();

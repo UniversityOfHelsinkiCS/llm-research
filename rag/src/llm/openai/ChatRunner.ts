@@ -100,11 +100,11 @@ export default class ChatRunner {
 
           case "thread.run.failed":
             this._emit("error", event.data.last_error);
+            process.nextTick(emptyTmp);
+            break;
 
           case "thread.run.completed":
-            process.nextTick(() => {
-              emptyTmp(); // empty the tmp files
-            });
+            process.nextTick(emptyTmp);
             break;
         }
       } catch (error) {
