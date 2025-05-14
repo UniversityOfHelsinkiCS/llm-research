@@ -6,14 +6,14 @@ import type { RunSubmitToolOutputsParamsStreaming } from "openai/resources/beta/
 const eventFilePath = "src/llm/openai/tmp/event.log";
 const ragOutputFilePath = "src/llm/openai/tmp/rag_output.log";
 
-export function writeSteam(message: string, filePath: string): void {
+export function logTmp(message: string, filePath: string): void {
   const output = fs.createWriteStream(filePath, { flags: "a" }); // 'a' = append mode
   const fileConsole = new Console(output, output);
   fileConsole.log(message);
 }
 
 export function logEvent(event: AssistantStreamEvent): void {
-  writeSteam(event.event, eventFilePath);
+  logTmp(event.event, eventFilePath);
 }
 
 export function logRagOutput(
@@ -23,7 +23,7 @@ export function logRagOutput(
     return JSON.parse(toolOutput.output);
   });
 
-  writeSteam(JSON.stringify(message, null, 2), ragOutputFilePath);
+  logTmp(JSON.stringify(message, null, 2), ragOutputFilePath);
 }
 
 export function emptyTmp(): void {

@@ -1,5 +1,5 @@
 import { getPokemonTool } from "./assistantTools.ts";
-import { emptyTmp, logEvent, logRagOutput } from "./util/writeStream.ts";
+import { emptyTmp, logEvent, logRagOutput } from "./util/monitoring.ts";
 import OpenAIService from "./OpenAIService.ts";
 import type {
   RequiredActionFunctionToolCall,
