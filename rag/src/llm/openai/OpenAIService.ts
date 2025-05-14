@@ -139,6 +139,14 @@ export default class OpenAIService {
     }
   };
 
+  deleteAssistant = async (assistantId: string): Promise<void> => {
+    try {
+      await openai.beta.assistants.del(assistantId);
+    } catch (err) {
+      console.error("Error deleting assistant:", err);
+    }
+  };
+
   addMessageToThread = async (
     threadId: string,
     content: string

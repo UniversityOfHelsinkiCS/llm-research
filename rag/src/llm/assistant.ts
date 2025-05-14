@@ -3,6 +3,10 @@ import type { AssistantTool } from "openai/resources/beta/assistants.mjs";
 import { EventEmitter } from "events";
 import { getPokemonTool } from "./openai/assistantTools.ts";
 
+/*
+DEPRECATED: REMOVE WHEN NOT NEEDED IN ragUse.ts MODULE
+ */
+
 export const startAssistant = async (
   instructions: string,
   prompt: string,

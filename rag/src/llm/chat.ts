@@ -6,6 +6,7 @@ import {
 } from "./openai/util/formatAssistantDetails.ts";
 import readline from "readline";
 import chalk from "chalk";
+import assistants from "./openai/data/assistants.json" with { type: "json" };
 
 const oapi = new OpenAIService();
 
@@ -28,7 +29,7 @@ function printCommands() {
   console.log("la - list assistants");
   console.log("lai - list assistants with detailed info");
   console.log("ga - get assistant details by assistant ID");
-  // console.log("ca - create assistant");
+  console.log("ca - create assistant");
   // console.log("da - delete assistant");
   console.log("");
 
@@ -133,23 +134,22 @@ async function command() {
         });
         break;
 
-      // case "ca": // create assistant
-      //   async () => {
-      //     const name = "Pokemon Master";
-      //     const instructions = "Answer questions about Pokemon";
+      case "ca": // create assistant
+        async () => {
+          const { name, instructions } = assistants[0];
 
-      //     const assistant = await oapi.createAssistant(name, instructions);
-      //     if (assistant) {
-      //       console.log("Assistant created:");
-      //       console.log(formatAssistantDetails(assistant));
-      //       console.log("");
-      //     } else {
-      //       console.log("Failed to create assistant");
-      //       console.log("");
-      //     }
-      //     command();
-      //   };
-      //   break;
+          const assistant = await oapi.createAssistant(name, instructions);
+          if (assistant) {
+            console.log("Assistant created:");
+            console.log(formatAssistantDetails(assistant));
+            console.log("");
+          } else {
+            console.log("Failed to create assistant");
+            console.log("");
+          }
+          command();
+        };
+        break;
 
       // Other commands -----------------------------------------------------------------------------------
 
