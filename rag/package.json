@@ -7,7 +7,9 @@
   "scripts": {
     "start": "node --experimental-strip-types --no-warnings src/index.ts",
     "pull": "./scripts/pull_model.sh",
-    "redis-cli": "./scripts/redis-cli.sh"
+    "redis-cli": "./scripts/redis-cli.sh",
+    "tail:events": "tail -f src/llm/openai/tmp/event.log",
+    "tail:rag": "tail -f src/llm/openai/tmp/rag_output.log"
   },
   "keywords": [],
   "author": "",

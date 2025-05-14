@@ -67,7 +67,7 @@ export default class ChatRunner {
 
   private async _run(stream: AssistantStream) {
     for await (const event of stream) {
-      logEvent(event); // in new terminal: tail -f src/llm/openai/tmp/event.log
+      logEvent(event); // in new terminal: npm run tail:events
 
       try {
         switch (event.event) {
@@ -143,7 +143,7 @@ export default class ChatRunner {
         )
       );
 
-      logRagOutput(toolOutputs); // in new terminal: tail -f src/llm/openai/tmp/rag_output.log
+      logRagOutput(toolOutputs); // in new terminal: npm run tail:rag
 
       // Submit all the tool outputs at the same time
       await this.submitToolOutputs(runId, threadId, toolOutputs);
