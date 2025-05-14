@@ -209,7 +209,8 @@ const startChatRun = (assistantId: string, threadId: string) => {
       command();
     })
     .on("error", (error) => {
-      console.error("Error:", error);
+      console.log("Error code:", error.code);
+      console.log("Error message:", error.message);
       console.log("");
     });
 

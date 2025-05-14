@@ -98,6 +98,9 @@ export default class ChatRunner {
             );
             break;
 
+          case "thread.run.failed":
+            this._emit("error", event.data.last_error);
+
           case "thread.run.completed":
             emptyTmp(); // empty the tmp files
             break;
