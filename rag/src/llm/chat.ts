@@ -139,22 +139,22 @@ async function command() {
         });
         break;
 
-      // case "ca": // create assistant
-      //   (async () => {
-      //     const { name, instructions } = assistants[0];
+      case "ca": // create assistant
+        (async () => {
+          const { name, instructions } = assistants[0];
 
-      //     const assistant = await oapi.createAssistant(name, instructions);
-      //     if (assistant) {
-      //       console.log("Assistant created:");
-      //       console.log(formatAssistantDetails(assistant));
-      //       console.log("");
-      //     } else {
-      //       console.log("Failed to create assistant");
-      //       console.log("");
-      //     }
-      //     command();
-      //   })();
-      //   break;
+          const assistant = await oapi.createAssistant(name, instructions);
+          if (assistant) {
+            console.log("Assistant created:");
+            console.log(formatAssistantDetails(assistant));
+            console.log("");
+          } else {
+            console.log("Failed to create assistant");
+            console.log("");
+          }
+          command();
+        })();
+        break;
 
       // Other commands -----------------------------------------------------------------------------------
 
