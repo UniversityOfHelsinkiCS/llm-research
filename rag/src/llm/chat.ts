@@ -29,7 +29,7 @@ function printCommands() {
   console.log("la - list assistants");
   console.log("lai - list assistants with detailed info");
   console.log("ga - get assistant details by assistant ID");
-  // console.log("ca - create assistant");
+  console.log("ca - create assistant");
   // console.log("da - delete assistant");
   console.log("");
 
