@@ -8,6 +8,8 @@ import { getCompletion } from "./llm/completion.ts";
 import { ragUse } from "./llm/ragUse.ts";
 import { getOllamaOpenAIClient } from "./llm/ollama.ts";
 import { startChat } from "./llm/chat.ts";
+import { getAzureOpenAIClient } from "./llm/azure.ts";
+import { config } from "./config.ts";
 
 const program = new Command();
 program
@@ -17,7 +19,7 @@ program
   .argument("<index>", "Index name")
   .action(async (loadpath: string, index: string) => {
     await createIndex(index);
-    const client = getOllamaOpenAIClient();
+    const client = getAzureOpenAIClient(config.EMBED_MODEL);
     await ingestionPipeline(client, loadpath);
     console.log("Documents loaded successfully");
   });

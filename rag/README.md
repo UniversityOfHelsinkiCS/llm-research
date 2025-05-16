@@ -40,3 +40,9 @@ docker exec -it rag-redis-1 redis-cli
 ```
 
 Or navigate to [localhost:8001](http://localhost:8001)
+
+## What we've learned
+
+- Database: redis works
+- Embedder: nomic-embed-text or snowflake-arcti-embed seem ok
+- It's all about the RAG document chunking
