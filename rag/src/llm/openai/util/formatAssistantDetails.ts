@@ -35,16 +35,24 @@ export function formatAssistantDetails(data: Assistant): string {
   if (Array.isArray(tools) && tools.length > 0) {
     lines.push("Tools:");
     tools.forEach((tool, index) => {
-      const fn = (tool as any).function; // Replace 'any' with the correct type if known
-      lines.push(`  Tool ${index + 1}: ${fn.name}`);
-      lines.push(`    Description: ${fn.description}`);
+      const fn = (tool as any).function;
+
+      if (!fn) {
+        lines.push(`  Tool ${index + 1}: <undefined function>`);
+        return;
+      }
+
+      lines.push(`  Tool ${index + 1}: ${fn.name ?? "<no name>"}`);
+      lines.push(`    Description: ${fn.description ?? "<no description>"}`);
       lines.push(`    Parameters:`);
-      for (const [key, value] of Object.entries(
-        fn.parameters?.properties ?? {}
-      )) {
+
+      const properties = fn.parameters?.properties ?? {};
+      for (const [key, value] of Object.entries(properties)) {
         const typedValue = value as { type: string; description: string };
         lines.push(
-          `      - ${key} (${typedValue.type}): ${typedValue.description}`
+          `      - ${key} (${typedValue.type ?? "unknown"}): ${
+            typedValue.description ?? "No description"
+          }`
         );
       }
     });

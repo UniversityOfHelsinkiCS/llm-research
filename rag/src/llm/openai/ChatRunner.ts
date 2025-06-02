@@ -98,6 +98,18 @@ export default class ChatRunner {
             );
             break;
 
+          case "thread.run.step.delta":
+            console.log(JSON.stringify(event.data, null, 2));
+            break;
+
+          case "thread.run.step.created":
+            console.log(JSON.stringify(event.data, null, 2));
+            break;
+
+          case "thread.run.step.completed":
+            console.log(JSON.stringify(event.data, null, 2));
+            break;
+
           case "thread.run.failed":
             this._emit("error", event.data.last_error);
             process.nextTick(emptyTmp);

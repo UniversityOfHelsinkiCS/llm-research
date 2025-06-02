@@ -1,7 +1,24 @@
 import { AzureOpenAI } from "openai";
+import type { FileSearchTool } from 'openai/resources/responses/responses'
 import { getAzureOpenAIClient } from "../azure.ts";
 
 const client = getAzureOpenAIClient();
+
+
+interface FileSearchObject {
+  definition: FileSearchTool
+}
+
+export const fileSearchTest: FileSearchObject = {
+  definition: {
+    type: 'file_search',
+    vector_store_ids: ['vs_Lsyd0uMbgeT8lS9pnxZQEl3c'], // vector store ID for ohtu-test
+    max_num_results: 1,
+    // filters: "",
+    // ranking_options: ""
+  },
+}
+
 
 export const getPokemonTool = {
   description: {

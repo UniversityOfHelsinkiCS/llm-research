@@ -40,7 +40,6 @@ function printCommands() {
 }
 
 // TODO: create a cli to choose the assistant from a list
-const defaultAssistant = "asst_FmeryOpYmAbgfUsRP7La9i86"; // pokemon master
 
 async function command() {
   rl.question(chalk.greenBright.bold("Command: "), (answer) => {
@@ -51,9 +50,9 @@ async function command() {
 
       case "s": // start new chat
         (async () => {
-          const assistants: Assistant[] = await oapi.getAssistants(100);
+          const assistants: Assistant[] = await oapi.getAssistants(50);
           const assistant = assistants.find(
-            (assistant: Assistant) => assistant.name === "Pokemon master"
+            (assistant: Assistant) => assistant.name === "Ohtu file searcher"
           );
 
           const { assistantId, threadId } = await oapi.createChat(
@@ -129,7 +128,8 @@ async function command() {
         rl.question("Assistant ID: ", async (assistantId) => {
           const assistant = await oapi.getAssistant(assistantId);
           if (assistant) {
-            console.log(formatAssistantDetails(assistant));
+            // console.log(formatAssistantDetails(assistant));
+            console.log(JSON.stringify(assistant, null, 2));
             console.log("");
           } else {
             console.log("Assistant not found");
